@@ -1,0 +1,66 @@
+name: Make Upload Keystore (run once)
+
+# ── چرا این ورک‌فلو وجود دارد؟ ────────────────────────────────────────────────
+# بیلدهای فروشگاه باید با یک کلید «خصوصی» امضا شوند، نه کلید دیباگِ عمومی که در
+# همین مخزن کامیت شده است. اگر کلید عمومی باشد، هر کسی می‌تواند نسخهٔ ساختگی
+# امضا کند؛ پس پیش از اولین انتشار در فروشگاه، یک کلید خصوصی می‌سازیم.
+#
+# این ورک‌فلو را یک‌بار دستی اجرا کنید (Actions → Make Upload Keystore → Run workflow).
+# خروجی: یک Artifact شامل فایل کلید + رمز تولید‌شدهٔ تصادفی + متنی که دقیقاً
+# می‌گوید کدام چهار Secret را در گیت‌هاب بسازید.
+#
+# پس از ساخت Secretها، Artifact را حذف کنید (Artifacts → سه‌نقطه → Delete)،
+# چون کلید خصوصی است.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  make-key:
+    name: Generate a private upload keystore
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate keystore
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          PASSWORD=$(head -c 24 /dev/urandom | base64 | tr -d '\n=+/' | cut -c1-28)
+          keytool -genkeypair -v \
+            -keystore out/novo-upload.p12 \
+            -storetype PKCS12 \
+            -alias novo-upload \
+            -keyalg RSA -keysize 4096 -validity 10950 \
+            -storepass "$PASSWORD" -keypass "$PASSWORD" \
+            -dname "CN=Novo Music Player, OU=Novin Web, O=Novin Web, L=Tehran, C=IR" >/dev/null 2>&1
+          base64 -w0 out/novo-upload.p12 > out/NOVO_KEYSTORE_BASE64.TXT
+          FINGERPRINT=$(keytool -list -v -keystore out/novo-upload.p12 -storepass "$PASSWORD" \
+            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//')
+          {
+            echo "کلید آپلود Novo ساخته شد."
+            echo
+            echo "۱) در گیت‌هاب → Settings → Secrets and variables → Actions، این چهار Secret را بسازید:"
+            echo "   NOVO_KEYSTORE_BASE64 = (محتوای فایل NOVO_KEYSTORE_BASE64.TXT در همین Artifact)"
+            echo "   NOVO_KEYSTORE_PASSWORD = $PASSWORD"
+            echo "   NOVO_KEY_ALIAS = novo-upload"
+            echo "   NOVO_KEY_PASSWORD = $PASSWORD"
+            echo
+            echo "۲) پس از افزودن Secretها، این Artifact را حذف کنید و این اجرا را هم پاک کنید."
+            echo "۳) اثر انگشت این کلید (در بیلدهای فروشگاه باید همین دیده شود):"
+            echo "   $FINGERPRINT"
+            echo
+            echo "⚠️ فایل novo-upload.p12 را جای امن (مثلاً یک فلش یا ایمیل به خودتان) نگه دارید:"
+            echo "   بدون این کلید، انتشار آپدیت برای همان برنامه در فروشگاه ممکن نیست."
+          } > out/README-FA.txt
+          cat out/README-FA.txt
+          echo "::notice::keystore generated - download the artifact, add the 4 secrets, then delete the artifact"
+
+      - name: Upload the keystore (private - download, set secrets, then delete)
+        uses: actions/upload-artifact@v6
+        with:
+          name: novo-upload-key-secret
+          path: out/
+          if-no-files-found: error
+          retention-days: 3

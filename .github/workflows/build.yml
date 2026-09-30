@@ -132,6 +132,31 @@ jobs:
             echo "::notice::$NAME -> package=$PKG"
           done
 
+      # اگر کلید خصوصی فروشگاه تنظیم شده باشد، نسخهٔ فروشگاه نباید با کلید عمومی دیباگ امضا شده باشد
+      - name: Verify store build uses the private key
+        if: success()
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+        run: |
+          APK="app/build/outputs/apk/standard/release/app-standard-release.apk"
+          [ -f "$APK" ] || { echo "::warning::$APK not found"; exit 0; }
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          [ -n "$APKSIGNER" ] || { echo "::warning::apksigner not found"; exit 0; }
+          PUBLIC_FP=$(keytool -list -v -keystore keystore/novo-debug.p12 -storepass android -storetype PKCS12 2>&1 \
+            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          APK_FP=$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null \
+            | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          echo "store APK key : $APK_FP"
+          if [ -n "$NOVO_KEYSTORE_PASSWORD" ]; then
+            if [ "$APK_FP" = "$PUBLIC_FP" ]; then
+              echo "::error::the store APK is still signed with the public debug key even though an upload key is configured"
+              exit 1
+            fi
+            echo "✅ store APK is signed with the private upload key"
+          else
+            echo "::warning::no NOVO_KEYSTORE_PASSWORD secret yet - the store APK is signed with the public debug key. Run the 'Make Upload Keystore' workflow and add the 4 secrets before uploading to a store."
+          fi
+
       # بررسی امضا: اگر APK با کلید ثابت پروژه امضا نشده باشد، بیلد Fail می‌شود
       - name: Verify debug APK signature
         if: success()

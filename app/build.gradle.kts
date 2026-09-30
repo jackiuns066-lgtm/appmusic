@@ -74,10 +74,17 @@ android {
   productFlavors {
     create("standard") {
       dimension = "channel"
+      // Store builds are signed with the private upload key when it is configured
+      // (see keystore/README.md + the Make Upload Keystore workflow). While it is not set up we
+      // fall back to the project's stable debug key, so builds stay installable and updatable.
+      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
     }
     create("legacy") {
       dimension = "channel"
       applicationId = "com.aistudio.avamusic.player.canary"
+      // Pinned to the debug key on purpose: this is the channel the first testers already have,
+      // and switching its key would make their in-place updates fail with "package conflicts".
+      signingConfig = signingConfigs.getByName("debug")
     }
   }
 
@@ -85,9 +92,7 @@ android {
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      // Falls back to the stable debug key when no upload key is configured, so the release APK
-      // is still installable while the store keys are being set up.
-      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+      // No signing config here on purpose: each flavour below decides which key it is signed with.
     }
     debug {
       signingConfig = signingConfigs.getByName("debug")
