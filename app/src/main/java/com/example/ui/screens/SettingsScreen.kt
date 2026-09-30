@@ -692,7 +692,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 BrandLinkRow(
-                    icon = Icons.Default.SystemUpdate,
+                    icon = Icons.Default.Refresh,
                     title = stringResource(R.string.settings_update_title),
                     description = stringResource(R.string.settings_update_desc),
                     testTag = "brand_update_row",
