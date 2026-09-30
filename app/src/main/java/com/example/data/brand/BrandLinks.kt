@@ -37,6 +37,11 @@ object BrandLinks {
         openUrl(context, latestReleaseUrl())
     }
 
+    /** Opens the brand website (with the UTM tags that tell us the traffic came from the app). */
+    fun openWebsite(context: Context) {
+        openUrl(context, websiteUrl())
+    }
+
     /** The id the app is published under, even when the installed build uses a private channel id. */
     private const val PUBLIC_PACKAGE_ID = "ir.webnovo.novo"
 
