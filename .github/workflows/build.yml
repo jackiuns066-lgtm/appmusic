@@ -282,6 +282,10 @@ jobs:
           # فایل AAB (قالب انتشار کافه‌بازار/گوگل‌پلی) هم عمومی می‌شود تا بدون حساب گیت‌هاب قابل دانلود باشد.
           AAB=app/build/outputs/bundle/standardRelease/app-standard-release.aab
           if [ -f "$AAB" ]; then
+            # نسخه‌های قدیمی AAB را پاک می‌کنیم تا صفحهٔ انتشار بی‌دلیل حجیم نشود
+            for old in $(gh release view apk-latest --repo "$REPO" --json assets --jq '.assets[].name' | grep -E '^Novo-[0-9]+\.aab$' || true); do
+              gh release delete-asset apk-latest "$old" --repo "$REPO" --yes >/dev/null 2>&1 || true
+            done
             cp "$AAB" "/tmp/Novo-$VERSION_CODE.aab"
             gh release upload apk-latest "/tmp/Novo-$VERSION_CODE.aab" --repo "$REPO" --clobber
             echo "bundle       : https://github.com/$REPO/releases/download/apk-latest/Novo-$VERSION_CODE.aab"
