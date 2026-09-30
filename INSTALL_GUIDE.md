@@ -50,8 +50,8 @@ Google AI Studio (`com.aistudio.avamusic.player`) کنار گذاشته شد و 
 
 | کانال | شناسهٔ بسته | فایل | وضعیت |
 |---|---|---|---|
-| اصلی (فروشگاه + لینک عمومی) | **`ir.webnovo.novo`** | `Novo-release.apk` / `my-app-aab` | شناسهٔ اختصاصی برند نوین‌وب؛ هیچ اپ دیگری این شناسه را ندارد |
-| آزمایشی/جایگزین (canary) | `com.aistudio.avamusic.player.canary` | `Novo-canary.apk` | **بدون تغییر** — تا کاربرانی که این کانال را نصب کرده‌اند، آپدیت در جا بگیرند |
+| اصلی (فروشگاه + لینک عمومی) | **`ir.webnovo.novo`** | `Novo-release.apk` / `Novo-<کدنسخه>.aab` | شناسهٔ اختصاصی برند نوین‌وب؛ هیچ اپ دیگری این شناسه را ندارد |
+| آزمایشی/جایگزین (کانال legacy/canary) | `com.aistudio.avamusic.player.canary` | `Novo-canary.apk` | **بدون تغییر** — تا کاربرانی که این کانال را نصب کرده‌اند، آپدیت در جا بگیرند |
 
 ### برای منِ کاربر (و هر کسی که کانال canary را نصب کرده)
 لینک canary **عوض نشده** و همیشه آخرین نسخه را می‌دهد؛ پس فعلاً همان را نصب کنید و مشکلی ندارید.
@@ -219,3 +219,11 @@ app-canary.apk   SHA256: cf84797eea51bc3ea506b6cf8376e28156405bb3270cc191e35f21b
 
 ### درون خود اپ
 `تنظیمات → درباره` هم نسخهٔ نصب‌شده را نمایش می‌دهد.
+
+## 🧱 ساختار فعلی بیلدها (برای مرجع فنی)
+- دو **flavor** تعریف شده: `standard` (شناسهٔ عمومی `ir.webnovo.novo`) و `legacy` (شناسهٔ قدیمی
+  `com.aistudio.avamusic.player.canary` برای تسترهای قبلی).
+- تسک‌های بیلد: `assembleStandardDebug` / `assembleStandardRelease` / `assembleLegacyRelease` / `bundleStandardRelease`.
+- خروجی‌ها: `app/build/outputs/apk/standard/{debug,release}/…` و `app/build/outputs/apk/legacy/release/…`
+  و `app/build/outputs/bundle/standardRelease/app-standard-release.aab`.
+- همهٔ خروجی‌ها با **یک کلید** (`keystore/novo-debug.p12` یا کلید آپلود اختصاصی) و امضای v1+v2+v3 امضا می‌شوند.

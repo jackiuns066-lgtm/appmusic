@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The "canary" build shows the same visible name as the main app ("Novo").
-     The canary channel keeps the legacy package id (com.aistudio.avamusic.player.canary) so
-     phones that already run it keep receiving in-place updates after the package-id migration. -->
-<resources>
-    <string name="app_name">Novo</string>
-</resources>

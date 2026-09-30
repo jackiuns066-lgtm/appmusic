@@ -65,6 +65,22 @@ android {
     }
   }
 
+  // Two public identities:
+  //  * standard -> ir.webnovo.novo ............ the app that goes to the stores / public links
+  //  * legacy   -> com.aistudio.avamusic.player.canary ... the id the first testers already have,
+  //                kept so their phones keep receiving real in-place updates (Android refuses to
+  //                install a build whose package id OR signing key changed).
+  flavorDimensions += "channel"
+  productFlavors {
+    create("standard") {
+      dimension = "channel"
+    }
+    create("legacy") {
+      dimension = "channel"
+      applicationId = "com.aistudio.avamusic.player.canary"
+    }
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = false
@@ -77,18 +93,6 @@ android {
       signingConfig = signingConfigs.getByName("debug")
     }
 
-    // "canary" = the same app under its own package id. Two jobs:
-    //  1. it can ALWAYS be installed, even when a copy of an app is still hiding on the phone
-    //     (second space, secure folder, dual apps, work profile ...) and blocks another package id;
-    //  2. it keeps the id that was already shipped to the first testers
-    //     (com.aistudio.avamusic.player.canary), so those installs continue to receive real
-    //     in-place updates instead of being stranded by the package-id migration.
-    create("canary") {
-      initWith(getByName("release"))
-      applicationId = "com.aistudio.avamusic.player.canary"
-      isMinifyEnabled = false
-      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
-    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11

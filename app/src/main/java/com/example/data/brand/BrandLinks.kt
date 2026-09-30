@@ -37,29 +37,34 @@ object BrandLinks {
         openUrl(context, latestReleaseUrl())
     }
 
-    fun storeListingUrl(): String =
-        "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
+    /** The id the app is published under, even when the installed build uses a private channel id. */
+    private const val PUBLIC_PACKAGE_ID = "ir.webnovo.novo"
 
-    /** market:// opens the store app directly, the https link is the fallback. */
-    private fun marketUrl(): String = "market://details?id=${BuildConfig.APPLICATION_ID}"
+    fun storeListingUrl(): String = "https://cafebazaar.ir/app/$PUBLIC_PACKAGE_ID"
 
-    fun openWebsite(context: Context) {
-        openUrl(context, websiteUrl())
-    }
-
-    /** Asks the user to rate the app — ratings above 4.5 measurably lift install conversion. */
+    /**
+     * Opens the store page for a rating: the Bazaar app first (that is where this build is
+     * published), then Google Play, and finally a browser page - whichever the phone can handle.
+     */
     fun openStoreListing(context: Context) {
-        val opened = try {
-            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(marketUrl())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            true
-        } catch (_: ActivityNotFoundException) {
-            false
-        } catch (_: Exception) {
-            false
+        val candidates = listOf(
+            "bazaar://details?id=$PUBLIC_PACKAGE_ID",
+            "market://details?id=$PUBLIC_PACKAGE_ID",
+            storeListingUrl()
+        )
+        for (url in candidates) {
+            try {
+                context.startActivity(
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+                return
+            } catch (_: ActivityNotFoundException) {
+                // try the next one
+            } catch (_: Exception) {
+                // try the next one
+            }
         }
-        if (!opened) {
-            openUrl(context, storeListingUrl())
-        }
+        Toast.makeText(context.applicationContext, R.string.toast_link_failed, Toast.LENGTH_SHORT).show()
     }
 
     fun openUrl(context: Context, url: String) {

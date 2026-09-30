@@ -113,7 +113,10 @@
 - کانال **canary** روی شناسهٔ قبلی خود (`com.aistudio.avamusic.player.canary`) **قفل شد** تا نصب‌های
   فعلی (شامل تسترها) بی‌وقفه آپدیت در جا بگیرند.
 - امضای کلاسیک **v1 (JAR)** هم برای همهٔ خروجی‌ها فعال شد (نیاز کافه‌بازار و مایکت برای دستگاه‌های قدیمی).
-- لینک عمومی کانال اصلی: `…/releases/download/apk-latest/Novo-release.apk` · کانال canary: `…/releases/download/apk-canary/Novo-canary.apk`
+- ساختار بیلد به دو **flavor** تغییر کرد: `standard` (شناسهٔ `ir.webnovo.novo`) و `legacy`
+  (شناسهٔ `com.aistudio.avamusic.player.canary` برای تسترهای قبلی).
+- لینک عمومی کانال اصلی: `…/releases/download/apk-latest/Novo-release.apk` · کانال قدیمی: `…/releases/download/apk-canary/Novo-canary.apk`
+- فایل AAB هم به‌صورت عمومی منتشر می‌شود: `…/releases/download/apk-latest/Novo-<کدنسخه>.aab`
 
 ## 📋 چک‌لیست انتشار (کارهایی که در Play Console لازم است)
 
