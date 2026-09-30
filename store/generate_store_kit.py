@@ -62,6 +62,27 @@ def ltr(draw, xy, text, f, fill=TEXT, anchor="la"):
     draw.text(xy, text, font=f, fill=fill, anchor=anchor)
 
 
+def fit_fa(draw, text, max_width, start_size, weight="regular", min_size=18):
+    """Largest Vazirmatn size at which the shaped Persian text fits max_width."""
+    size = start_size
+    while size > min_size:
+        f = font(size, weight)
+        if draw.textlength(fa(text), font=f) <= max_width:
+            return f
+        size -= 2
+    return font(min_size, weight)
+
+
+def fit_ltr(draw, text, max_width, start_size, weight="regular", min_size=18):
+    size = start_size
+    while size > min_size:
+        f = font(size, weight)
+        if draw.textlength(text, font=f) <= max_width:
+            return f
+        size -= 2
+    return font(min_size, weight)
+
+
 def rrect(draw, box, radius, fill=None, outline=None, width=2):
     draw.rounded_rectangle(box, radius=radius, fill=fill, outline=outline, width=width)
 
@@ -445,28 +466,43 @@ def shot_brand(path):
     phone_chrome(img, "نوین‌وب", "بیشتر از یک پخش‌کنندهٔ موسیقی")
 
     rrect(d, (48, 250, 1032, 700), 40, fill=SURFACE)
-    rrect(d, (890, 286, 1000, 396), 30, fill=GOLD)
-    ltr(d, (914, 302), "N", font(62, "bold"), (24, 24, 28))
-    rtl(d, (860, 300), "بیشتر از نوین‌وب", font(36, "bold"), TEXT)
+    rrect(d, (96, 292, 206, 402), 30, fill=GOLD)
+    ltr(d, (124, 312), "N", font(62, "bold"), (24, 24, 28))
+    rtl(d, (856, 300), "بیشتر از نوین‌وب", font(36, "bold"), TEXT)
     rtl(d, (1000, 372), "اپ را به دوستانتان معرفی کنید؛ ما", font(27), MUTED)
     rtl(d, (1000, 414), "پخش‌کننده‌های سریع‌تر و بی‌تبلیغات", font(27), MUTED)
     rtl(d, (1000, 456), "می‌سازیم و همه‌چیز رایگان می‌ماند.", font(27), MUTED)
     rrtl = 1000
-    rrect(d, (740, 540, 1000, 640), 30, fill=(GOLD[0] // 5, GOLD[1] // 5, GOLD[2] // 5))
-    rtl(d, (rrtl - 24, 566), "کد تخفیف ندارد، خودش رایگان است 🙂", font(26), GOLD)
+    rrect(d, (596, 546, 1000, 646), 30, fill=(GOLD[0] // 5, GOLD[1] // 5, GOLD[2] // 5))
+    rtl(d, (976, 572), "کد تخفیف ندارد، خودش رایگان است", font(26), GOLD)
 
     links = [
-        ("وب‌سایت نوین‌وب", "webnovo.ir • محصولات و پروژه‌ها", "↗"),
-        ("امتیاز دادن به Novo", "با یک امتیاز، دیده‌شدن اپ بیشتر می‌شود", "★"),
-        ("آخرین نسخه", "دانلود جدیدترین فایل نصب از صفحهٔ انتشار", "⬇"),
+        ("وب‌سایت نوین‌وب", "webnovo.ir • محصولات و پروژه‌ها", "link"),
+        ("امتیاز دادن به Novo", "با یک امتیاز، دیده‌شدن اپ بیشتر می‌شود", "star"),
+        ("آخرین نسخه", "دانلود جدیدترین فایل نصب از صفحهٔ انتشار", "download"),
     ]
     y = 730
     for title, desc, icon in links:
         rrect(d, (48, y, 1032, y + 150), 30, fill=SURFACE_VAR)
         rtl(d, (920, y + 26), title, font(30, "bold"), TEXT)
         rtl(d, (920, y + 76), desc, font(25), MUTED)
-        d.ellipse((104, y + 44, 172, y + 112), fill=(GOLD[0] // 6, GOLD[1] // 6, GOLD[2] // 6))
-        ltr(d, (116, y + 52), icon, font(44, "bold"), GOLD)
+        cxb, cyb = 138, y + 76
+        d.ellipse((cxb - 34, cyb - 34, cxb + 34, cyb + 34), fill=(GOLD[0] // 6, GOLD[1] // 6, GOLD[2] // 6))
+        if icon == "link":
+            d.line((cxb - 12, cyb + 12, cxb + 12, cyb - 12), fill=GOLD, width=5)
+            d.polygon([(cxb + 12, cyb - 12), (cxb - 2, cyb - 12), (cxb + 12, cyb + 2)], fill=GOLD)
+            d.line((cxb - 12, cyb + 12, cxb - 12, cyb - 2), fill=GOLD, width=5)
+        elif icon == "star":
+            pts = []
+            for k in range(10):
+                ang = -1.5708 + k * 0.6283
+                r = 22 if k % 2 == 0 else 9
+                pts.append((cxb + r * __import__("math").cos(ang), cyb + r * __import__("math").sin(ang)))
+            d.polygon(pts, fill=GOLD)
+        else:
+            d.line((cxb, cyb - 20, cxb, cyb + 12), fill=GOLD, width=5)
+            d.polygon([(cxb - 12, cyb + 8), (cxb + 12, cyb + 8), (cxb, cyb + 24)], fill=GOLD)
+            d.line((cxb - 16, cyb - 26, cxb + 16, cyb - 26), fill=GOLD, width=5)
         y += 172
 
     # poster preview
@@ -509,18 +545,34 @@ def make_feature_graphic():
         d.line((i, 0, i + 200, h), fill=(26 + i // 40, 14, 40 + i // 30), width=2)
     img = img.filter(ImageFilter.GaussianBlur(2))
     d = ImageDraw.Draw(img)
-    d.ellipse((700, 60, 1000, 360), outline=PURPLE, width=3)
-    d.ellipse((740, 100, 960, 320), outline=CYAN, width=3)
-    d.ellipse((780, 140, 920, 280), fill=(20, 20, 30), outline=GOLD, width=4)
-    ltr(d, (824, 168), "N", font(96, "bold"), GOLD)
-    d.polygon([(610, 180), (660, 200), (610, 220)], fill=CYAN)
-    d.polygon([(560, 160), (610, 200), (560, 240)], fill=CYAN)
-    d.polygon([(970, 180), (920, 200), (970, 220)], fill=PURPLE)
-    d.polygon([(1020, 160), (970, 200), (1020, 240)], fill=PURPLE)
-    rtl(d, (540, 120), "نوین‌وب", font(76, "bold"), TEXT)
-    rtl(d, (540, 230), "پخش‌کنندهٔ موسیقی آفلاین", font(38, "medium"), GOLD)
-    rtl(d, (540, 296), "بدون تبلیغات • بدون اینترنت • کاملاً رایگان", font(30), MUTED)
-    rtl(d, (540, 366), "ویجت حرفه‌ای • اکولایزر ۵ باندی • کنترل صفحهٔ قفل", font(28), (200, 200, 215))
+
+    # wordmark on the right, copy flowing leftwards (RTL)
+    cx, cy = 830, 250
+    d.ellipse((cx - 150, cy - 150, cx + 150, cy + 150), outline=PURPLE, width=3)
+    d.ellipse((cx - 116, cy - 116, cx + 116, cy + 116), outline=CYAN, width=3)
+    d.ellipse((cx - 82, cy - 82, cx + 82, cy + 82), fill=(20, 20, 30), outline=GOLD, width=4)
+    f_n = font(96, "bold")
+    ltr(d, (cx - d.textlength("N", font=f_n) / 2, cy - 74), "N", f_n, GOLD)
+
+    right = cx - 190
+    f1 = fit_fa(d, "نوین‌وب", right - 24, 84, "bold")
+    rtl(d, (right, 92), "نوین‌وب", f1, TEXT)
+    f2 = fit_fa(d, "پخش‌کنندهٔ موسیقی آفلاین", right - 24, 44, "medium")
+    rtl(d, (right, 212), "پخش‌کنندهٔ موسیقی آفلاین", f2, GOLD)
+    f3 = fit_fa(d, "بدون تبلیغات • بدون اینترنت • کاملاً رایگان", right - 24, 32)
+    rtl(d, (right, 286), "بدون تبلیغات • بدون اینترنت • کاملاً رایگان", f3, MUTED)
+    f4 = fit_fa(d, "ویجت حرفه‌ای • اکولایزر ۵ باندی • کنترل صفحهٔ قفل", right - 24, 30)
+    rtl(d, (right, 356), "ویجت حرفه‌ای • اکولایزر ۵ باندی • کنترل صفحهٔ قفل", f4, (200, 200, 215))
+
+    # play motif on the left, fully inside the frame
+    d.polygon([(120, 190), (168, 215), (120, 240)], fill=CYAN)
+    d.polygon([(66, 158), (140, 215), (66, 272)], fill=CYAN)
+    lines = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    ld = ImageDraw.Draw(lines)
+    for i, x in enumerate((36, 44, 52)):
+        ld.line((x, 215 - 30 + i * 12, x, 215 + 30 - i * 12), fill=CYAN + (150 - i * 40,), width=4)
+    img = Image.alpha_composite(img.convert("RGBA"), lines).convert("RGB")
+    d = ImageDraw.Draw(img)
     img.save(os.path.join(OUT, "feature-graphic-1024x500.png"))
     return os.path.join(OUT, "feature-graphic-1024x500.png")
 
