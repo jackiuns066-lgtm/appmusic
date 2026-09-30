@@ -1,0 +1,8 @@
+{
+  "name": "Novo",
+  "description": "موزیک پلیر مدرن، سبک و آفلاین Novo - طراحی شده توسط تیم نوین وب (webnovo.ir) با اکولایزر گرافیکی حرفه‌ای، کنترل صفحه قفل و ویژوالایزر",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
