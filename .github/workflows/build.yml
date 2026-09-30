@@ -73,7 +73,7 @@ jobs:
           NOVO_KEY_PASSWORD: ${{ secrets.NOVO_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          ./gradlew assembleDebug assembleRelease --stacktrace 2>&1 | tee build-log.txt
+          ./gradlew assembleDebug assembleRelease assembleCanary --stacktrace 2>&1 | tee build-log.txt
 
       # اثر انگشت کلید امضا در لاگ چاپ می‌شود تا مطمئن شویم همهٔ بیلدها
       # با یک کلید یکسان امضا می‌شوند (شرط نصب روی نسخهٔ قبلی).
@@ -83,12 +83,28 @@ jobs:
           for apk in \
             app/build/outputs/apk/debug/app-debug.apk \
             app/build/outputs/apk/release/app-release.apk \
-            app/build/outputs/apk/release/app-release-unsigned.apk ; do
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/canary/app-canary.apk ; do
             [ -f "$apk" ] || continue
             echo "::group::signature of $apk"
             keytool -printcert -jarfile "$apk" | head -14 || true
             echo "::endgroup::"
           done
+
+      # بررسی امضا: اگر APK با کلید ثابت پروژه امضا نشده باشد، بیلد Fail می‌شود
+      - name: Verify debug APK signature
+        if: success()
+        run: |
+          EXPECTED="CF:84:79:7E:EA:51:BC:3E:A5:06:B6:CF:83:76:E2:81:56:40:5B:B3:27:0C:C1:91:E3:5F:21:BC:01:25:00:72"
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          ACTUAL=$(keytool -printcert -jarfile "$APK" | grep -i "SHA256:" | head -1 | sed 's/.*SHA256: *//' | tr 'a-f' 'A-F') || ACTUAL=""
+          echo "expected: $EXPECTED"
+          echo "actual  : $ACTUAL"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::app-debug.apk is NOT signed with the project key - installations will conflict. Check keystore/novo-debug.p12."
+            exit 1
+          fi
+          echo "✅ debug APK is signed with the stable project key"
 
       # خطاهای کامپایل را به‌صورت Annotation نشان می‌دهد (حداکثر ۱۰ مورد)
       - name: Report build errors
@@ -141,6 +157,16 @@ jobs:
         with:
           name: my-app-release-apk
           path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
+
+      # نسخهٔ دوم با شناسهٔ بستهٔ متفاوت: همیشه نصب می‌شود، حتی اگر نسخهٔ قبلی
+      # جایی روی گوشی (پروفایل کاری، فضای دوم، اپ کلون‌شده) پنهان مانده باشد.
+      - name: Upload canary APK (different package id)
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-canary-apk
+          path: app/build/outputs/apk/canary/app-canary.apk
           if-no-files-found: warn
 
       # لاگ کامل بیلد (هم برای موفق و هم برای ناموفق) + گزارش‌های خطا

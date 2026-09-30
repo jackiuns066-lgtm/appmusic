@@ -62,6 +62,19 @@ android {
     debug {
       signingConfig = signingConfigs.getByName("debug")
     }
+
+    // "canary" = the same app under a different package id (com.aistudio.avamusic.player.canary).
+    // It exists so a build can ALWAYS be installed, even when a copy of the app is still hiding on
+    // the phone (second space, secure folder, dual apps, work profile ...) and blocks the normal
+    // package with "package conflicts with an existing package".
+    create("canary") {
+      initWith(getByName("release"))
+      applicationIdSuffix = ".canary"
+      versionNameSuffix = "-canary"
+      isMinifyEnabled = false
+      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+      resValue("string", "app_name", "Novo Canary")
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
