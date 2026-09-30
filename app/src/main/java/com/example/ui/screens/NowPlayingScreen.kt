@@ -129,6 +129,8 @@ fun NowPlayingScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    // Read the theme colour here: MaterialTheme cannot be accessed inside an onClick lambda.
+    val accentColor = MaterialTheme.colorScheme.primary.toArgb()
     val track = playbackState.currentTrack
     if (track == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -214,7 +216,6 @@ fun NowPlayingScreen(
                 // Brand poster: a ready to post story image with cover art + Novo / webnovo.ir
                 IconButton(
                     onClick = {
-                        val accentColor = MaterialTheme.colorScheme.primary.toArgb()
                         scope.launch {
                             val shared = BrandPoster.share(
                                 context = context,
