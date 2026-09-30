@@ -16,7 +16,11 @@ android {
   compileSdk = 36
 
   defaultConfig {
-    applicationId = "com.aistudio.avamusic.player"
+    // The public identity of the app. Chosen once, before the first store release, because a store
+    // listing can never change it later. It is derived from our own domain (webnovo.ir), so it also
+    // cannot clash with somebody else's app - which is exactly what caused "package conflicts" for
+    // users who happened to have another build under the old template id.
+    applicationId = "ir.webnovo.novo"
     minSdk = 24
     targetSdk = 36
     versionCode = baseVersionCode + ciRunNumber
@@ -37,6 +41,10 @@ android {
         keyAlias = "androiddebugkey"
         keyPassword = "android"
         storeType = "PKCS12"
+        // Iranian stores (Cafe Bazaar / Myket) ask for the classic v1 JAR signature as well.
+        enableV1Signing = true
+        enableV2Signing = true
+        enableV3Signing = true
       }
     }
 
@@ -69,13 +77,15 @@ android {
       signingConfig = signingConfigs.getByName("debug")
     }
 
-    // "canary" = the same app under a different package id (com.aistudio.avamusic.player.canary).
-    // It exists so a build can ALWAYS be installed, even when a copy of the app is still hiding on
-    // the phone (second space, secure folder, dual apps, work profile ...) and blocks the normal
-    // package with "package conflicts with an existing package".
+    // "canary" = the same app under its own package id. Two jobs:
+    //  1. it can ALWAYS be installed, even when a copy of an app is still hiding on the phone
+    //     (second space, secure folder, dual apps, work profile ...) and blocks another package id;
+    //  2. it keeps the id that was already shipped to the first testers
+    //     (com.aistudio.avamusic.player.canary), so those installs continue to receive real
+    //     in-place updates instead of being stranded by the package-id migration.
     create("canary") {
       initWith(getByName("release"))
-      applicationIdSuffix = ".canary"
+      applicationId = "com.aistudio.avamusic.player.canary"
       isMinifyEnabled = false
       signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
     }

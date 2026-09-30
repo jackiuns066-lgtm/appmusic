@@ -76,7 +76,7 @@
   "full_description": "Novo Music Player is a modern, lightweight and completely offline music player with advanced customization, designed and developed by the Novin Web team (webnovo.ir).\n\nKey features:\n• Powerful offline playback: MP3, FLAC, WAV, M4A, OGG and AAC are all supported.\n• Lock screen & notification controls: play, pause, next and previous straight from the shade.\n• Home screen widget: album art, song title, artist, a live progress bar and previous / play-pause / next buttons.\n• 5-band graphic equalizer with Bass Boost and 3D Virtualizer presets.\n• Four animated now playing styles: rotating neon vinyl, neon spectrum waves, floating 3D glass and pulsing rings.\n• Album art fills the whole now playing frame, with the visual effects layered on top.\n• Drag the timeline in the mini player or the now playing screen to jump anywhere in a song.\n• Share a song – audio file or track info – with any app.\n• Smart offline recommendations based on your listening habits, with no data sent anywhere.\n• Browse your library by folders, artists, albums and genres.\n• Sleep timer, headset unplug auto pause and full audio focus handling.\n• AMOLED black theme plus five neon accent colors.\n• Bilingual interface: Persian and English, following your device language automatically.\n• No ads and no internet connection required.\n\nDeveloped by the Novin Web team — https://webnovo.ir"
  },
  "release_info": {
-  "application_id": "com.aistudio.avamusic.player",
+  "application_id": "ir.webnovo.novo",
   "version_name": "1.1.0",
   "version_code": 2,
   "min_sdk": 24,

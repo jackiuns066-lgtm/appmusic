@@ -223,7 +223,7 @@ jobs:
           NOTES_MAIN="### Novo - آخرین بیلد
           **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
 
-          - \`Novo-release.apk\` - نسخهٔ اصلی (شناسهٔ بسته: com.aistudio.avamusic.player)
+          - \`Novo-release.apk\` - نسخهٔ اصلی (شناسهٔ بسته: ir.webnovo.novo)
           - \`Novo-debug.apk\` - همان اپ با قابلیت گزارش خطا
 
           اگر روی گوشی شما نسخهٔ قدیمی از همین شناسه نصب است، این فایل بدون حذف آن به‌روزرسانی می‌شود.
@@ -233,9 +233,10 @@ jobs:
           NOTES_CANARY="### Novo Canary - آخرین بیلد
           **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
 
-          - \`Novo-canary.apk\` - نسخهٔ جایگزین با شناسهٔ بستهٔ جدا (com.aistudio.avamusic.player.canary)
+          - \`Novo-canary.apk\` - کانال آزمایشی با شناسهٔ جدا (com.aistudio.avamusic.player.canary)
 
-          این فایل حتی وقتی نسخهٔ اصلی به دلیلی روی گوشی نصب نمی‌شود، نصب می‌شود."
+          این فایل حتی وقتی نسخهٔ اصلی به دلیلی روی گوشی نصب نمی‌شود، نصب می‌شود و روی هر گوشی‌ای
+          که از قبل همین کانال را دارد، به‌صورت آپدیت در جا می‌نشیند."
 
           if gh release view apk-latest --repo "$REPO" >/dev/null 2>&1; then
             gh release edit apk-latest --repo "$REPO" --notes "$NOTES_MAIN" --latest
