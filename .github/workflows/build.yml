@@ -85,13 +85,18 @@ jobs:
             | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' || true)
           echo "::warning::project keystore SHA256: ${KEYSTORE_FP:-unknown}"
 
+          # توجه: این APKها با امضای v2/v3 (نه JAR signature) امضا شده‌اند، پس باید با apksigner خوانده شوند.
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          echo "apksigner: ${APKSIGNER:-not found}"
+
           for apk in \
             app/build/outputs/apk/debug/app-debug.apk \
             app/build/outputs/apk/release/app-release.apk \
             app/build/outputs/apk/release/app-release-unsigned.apk \
             app/build/outputs/apk/canary/app-canary.apk ; do
             [ -f "$apk" ] || continue
-            FP=$(keytool -printcert -jarfile "$apk" 2>&1 | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' || true)
+            FP=$([ -n "$APKSIGNER" ] && "$APKSIGNER" verify --print-certs "$apk" 2>/dev/null \
+              | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' || true)
             echo "::warning::$(basename "$apk") SHA256: ${FP:-unknown}"
           done
 
@@ -100,15 +105,16 @@ jobs:
         if: success()
         run: |
           APK="app/build/outputs/apk/debug/app-debug.apk"
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
           EXPECTED=$(keytool -list -v -keystore keystore/novo-debug.p12 -storepass android -storetype PKCS12 2>&1 \
             | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
-          ACTUAL=$(keytool -printcert -jarfile "$APK" 2>&1 \
-            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          ACTUAL=$([ -n "$APKSIGNER" ] && "$APKSIGNER" verify --print-certs "$APK" 2>&1 \
+            | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F' || true)
           echo "keystore: $EXPECTED"
           echo "apk     : $ACTUAL"
           if [ -z "$ACTUAL" ]; then
-            echo "::error::could not read the signature of $APK"
-            keytool -printcert -jarfile "$APK" 2>&1 | head -20 || true
+            echo "::error::could not read the signature of $APK (apksigner=${APKSIGNER:-missing})"
+            "$APKSIGNER" verify --print-certs "$APK" 2>&1 | head -20 || true
             exit 1
           fi
           if [ "$ACTUAL" != "$EXPECTED" ]; then
