@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.AppSettings
 import com.example.ui.i18n.AppLanguage
+import com.example.BuildConfig
 
 @Composable
 fun SettingsScreen(

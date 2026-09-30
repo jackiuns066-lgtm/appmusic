@@ -187,7 +187,7 @@ private object WidgetUpdater {
     private fun applyAccent(views: RemoteViews, accentTheme: String) {
         val color = accentColorFor(accentTheme)
         try {
-            views.setInt(R.id.widget_progress, "setProgressTintList", ColorStateList.valueOf(color))
+            views.setColorStateList(R.id.widget_progress, "setProgressTintList", ColorStateList.valueOf(color))
         } catch (_: Exception) {
         }
         try {
