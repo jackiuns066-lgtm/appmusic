@@ -170,7 +170,7 @@ You can add songs from the “Songs” tab using the ＋ button.</string>
     <string name="settings_about_tagline">Novo — a modern, offline and professional music player</string>
     <string name="settings_about_author">Designed by the Novin Web team
 webnovo.ir</string>
-    <string name="settings_about_version">Version %1$s | Advanced audio features, folder browsing, 5-band graphic equalizer and dedicated lock screen controls. Ad-free and completely free.</string>
+    <string name="settings_about_version">Version %1$s (build %2$d) | Advanced audio features, folder browsing, 5-band graphic equalizer and dedicated lock screen controls. Ad-free and completely free.</string>
     <string name="app_share_subject">Download the Novo music player</string>
     <string name="app_share_text">Novo — a modern and professional music player by Novin Web: https://webnovo.ir</string>
     <string name="app_share_chooser">Share Novo</string>

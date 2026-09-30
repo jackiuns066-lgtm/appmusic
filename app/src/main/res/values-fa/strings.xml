@@ -170,7 +170,7 @@
     <string name="settings_about_tagline">موزیک پلیر مدرن، آفلاین و حرفه‌ای Novo</string>
     <string name="settings_about_author">طراحی شده توسط تیم نوین وب
 webnovo.ir</string>
-    <string name="settings_about_version">نسخه %1$s | ارائه دهنده پیشرفته‌ترین قابلیت‌های صوتی، تفکیک پوشه‌ای، اکولایزر ۵ کاناله گرافیکی و کنترل اختصاصی صفحه قفل بدون تبلیغات و کاملاً رایگان.</string>
+    <string name="settings_about_version">نسخه %1$s (بیلد %2$d) | ارائه دهنده پیشرفته‌ترین قابلیت‌های صوتی، تفکیک پوشه‌ای، اکولایزر ۵ کاناله گرافیکی و کنترل اختصاصی صفحه قفل بدون تبلیغات و کاملاً رایگان.</string>
     <string name="app_share_subject">دانلود موزیک پلیر Novo</string>
     <string name="app_share_text">موزیک پلیر مدرن و حرفه‌ای Novo - طراحی شده توسط نوین وب: https://webnovo.ir</string>
     <string name="app_share_chooser">اشتراک‌گذاری Novo</string>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Overrides the launcher label for the "canary" build so it is easy to tell the two
-     installations apart on a phone that has both. -->
+<!-- The "canary" build shows the same visible name as the main app ("Novo").
+     Only the package id differs (com.aistudio.avamusic.player.canary), which is what lets it be
+     installed next to - or instead of - a blocked copy of the main package. -->
 <resources>
-    <string name="app_name">Novo Canary</string>
+    <string name="app_name">Novo</string>
 </resources>

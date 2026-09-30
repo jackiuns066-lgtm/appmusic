@@ -76,7 +76,6 @@ android {
     create("canary") {
       initWith(getByName("release"))
       applicationIdSuffix = ".canary"
-      versionNameSuffix = if (ciRunNumber > 0) "-canary.$ciRunNumber" else "-canary"
       isMinifyEnabled = false
       signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
     }
