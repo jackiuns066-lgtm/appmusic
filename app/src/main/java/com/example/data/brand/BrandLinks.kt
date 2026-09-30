@@ -24,6 +24,19 @@ object BrandLinks {
 
     fun websiteUrl(): String = WEBSITE + UTM_SUFFIX
 
+    /**
+     * Public download page for the newest build - no GitHub account needed, so it can be shared
+     * with everybody. Each channel keeps one rolling release, so this link never changes.
+     */
+    fun latestReleaseUrl(): String {
+        val tag = if (BuildConfig.APPLICATION_ID.endsWith(".canary")) "apk-canary" else "apk-latest"
+        return "https://github.com/jackiuns066-lgtm/appmusic/releases/tag/$tag"
+    }
+
+    fun openLatestRelease(context: Context) {
+        openUrl(context, latestReleaseUrl())
+    }
+
     fun storeListingUrl(): String =
         "https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"
 

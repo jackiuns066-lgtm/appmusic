@@ -688,6 +688,16 @@ fun SettingsScreen(
                     testTag = "brand_rate_row",
                     onClick = { BrandLinks.openStoreListing(context) }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.SystemUpdate,
+                    title = stringResource(R.string.settings_update_title),
+                    description = stringResource(R.string.settings_update_desc),
+                    testTag = "brand_update_row",
+                    onClick = { BrandLinks.openLatestRelease(context) }
+                )
             }
         }
     }

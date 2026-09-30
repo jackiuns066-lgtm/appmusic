@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 # اگر چند push پشت سر هم انجام شود، اجرای قبلی لغو می‌شود
 concurrency:
@@ -74,6 +74,19 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew assembleDebug assembleRelease assembleCanary --stacktrace 2>&1 | tee build-log.txt
+
+      # AAB: قالب مورد نیاز Google Play / کافه‌بازار / مایکت برای انتشار رسمی.
+      # اگر در این قالب منتشر شود، همهٔ کاربران به‌روزرسانی را از فروشگاه می‌گیرند و
+      # هرگز خطای «بستهٔ متناقض» (package conflicts) نمی‌بینند.
+      - name: Build release bundle (AAB for the stores)
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+          NOVO_KEY_ALIAS: ${{ secrets.NOVO_KEY_ALIAS }}
+          NOVO_KEY_PASSWORD: ${{ secrets.NOVO_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          ./gradlew bundleRelease --stacktrace 2>&1 | tee -a build-log.txt \
+            || echo "::warning::bundleRelease failed - the APKs are unaffected"
 
       # اثر انگشت کلید امضا در لاگ چاپ می‌شود تا مطمئن شویم همهٔ بیلدها
       # با یک کلید یکسان امضا می‌شوند (شرط نصب روی نسخهٔ قبلی).
@@ -185,6 +198,70 @@ jobs:
           name: my-app-canary-apk
           path: app/build/outputs/apk/canary/app-canary.apk
           if-no-files-found: warn
+
+      - name: Upload release bundle (AAB)
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: warn
+
+      # لینک دانلود عمومی و ثابت (بدون نیاز به حساب گیت‌هاب) — همان لینکی که
+      # می‌توانید برای کاربران بفرستید. با هر بیلد به‌روزرسانی می‌شود.
+      - name: Publish public download links
+        if: success() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          REPO="$GITHUB_REPOSITORY"
+          VERSION_CODE=$((10100 + RUN_NUMBER))
+          SHA=$(git rev-parse --short HEAD)
+
+          NOTES_MAIN="### Novo - آخرین بیلد
+          **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
+
+          - \`Novo-release.apk\` - نسخهٔ اصلی (شناسهٔ بسته: com.aistudio.avamusic.player)
+          - \`Novo-debug.apk\` - همان اپ با قابلیت گزارش خطا
+
+          اگر روی گوشی شما نسخهٔ قدیمی از همین شناسه نصب است، این فایل بدون حذف آن به‌روزرسانی می‌شود.
+          اگر خطای «بستهٔ متناقض» دیدید، یعنی نسخه‌ای با کلید امضای دیگری نصب است:
+          ابتدا همان اپ قدیمی را حذف کنید یا از فایل \`Novo-canary.apk\` استفاده کنید."
+
+          NOTES_CANARY="### Novo Canary - آخرین بیلد
+          **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
+
+          - \`Novo-canary.apk\` - نسخهٔ جایگزین با شناسهٔ بستهٔ جدا (com.aistudio.avamusic.player.canary)
+
+          این فایل حتی وقتی نسخهٔ اصلی به دلیلی روی گوشی نصب نمی‌شود، نصب می‌شود."
+
+          if gh release view apk-latest --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit apk-latest --repo "$REPO" --notes "$NOTES_MAIN" --latest
+          else
+            gh release create apk-latest --repo "$REPO" --title "Novo - latest build" --notes "$NOTES_MAIN" --latest
+          fi
+          for f in app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/debug/app-debug.apk; do
+            [ -f "$f" ] || continue
+            case "$f" in *release*) NAME="Novo-release.apk" ;; *) NAME="Novo-debug.apk" ;; esac
+            cp "$f" "/tmp/$NAME"
+            gh release upload apk-latest "/tmp/$NAME" --repo "$REPO" --clobber
+          done
+
+          if gh release view apk-canary --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit apk-canary --repo "$REPO" --notes "$NOTES_CANARY" --prerelease
+          else
+            gh release create apk-canary --repo "$REPO" --title "Novo Canary - latest build" --notes "$NOTES_CANARY" --prerelease
+          fi
+          if [ -f app/build/outputs/apk/canary/app-canary.apk ]; then
+            cp app/build/outputs/apk/canary/app-canary.apk /tmp/Novo-canary.apk
+            gh release upload apk-canary /tmp/Novo-canary.apk --repo "$REPO" --clobber
+          fi
+
+          echo "main channel : https://github.com/$REPO/releases/download/apk-latest/Novo-release.apk"
+          echo "canary       : https://github.com/$REPO/releases/download/apk-canary/Novo-canary.apk"
+          echo "::notice::public download links updated"
 
       # لاگ کامل بیلد (هم برای موفق و هم برای ناموفق) + گزارش‌های خطا
       - name: Upload build log

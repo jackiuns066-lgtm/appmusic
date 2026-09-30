@@ -237,6 +237,8 @@ webnovo.ir</string>
     <string name="brand_website_desc">webnovo.ir — پروژه‌ها و خدمات ما</string>
     <string name="brand_rate_title">امتیاز دادن به Novo</string>
     <string name="brand_rate_desc">امتیاز شما کمک می‌کند افراد بیشتری ما را پیدا کنند</string>
+    <string name="settings_update_title">آخرین نسخه</string>
+    <string name="settings_update_desc">دانلود جدیدترین فایل نصب از صفحهٔ انتشار عمومی (بدون نیاز به حساب کاربری).</string>
     <string name="toast_link_failed">باز کردن لینک ممکن نشد</string>
     <string name="cd_share_poster">ساخت پوستر اشتراک‌گذاری</string>
     <string name="share_poster_chooser">اشتراک‌گذاری پوستر این آهنگ</string>
