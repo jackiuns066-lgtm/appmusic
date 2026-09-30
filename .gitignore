@@ -16,3 +16,7 @@
 local.properties
 .env
 debug.keystore
+
+# release/upload signing key - never commit (see keystore/README.md)
+keystore/novo-upload.p12
+keystore/CREDENTIALS.txt

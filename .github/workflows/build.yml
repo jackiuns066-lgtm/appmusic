@@ -53,10 +53,42 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Build Debug APK
+      # کلید امضای اختصاصی از Secrets خوانده می‌شود (اختیاری).
+      # اگر تنظیم نشده باشد، نسخهٔ release با همان کلید debug امضا می‌شود تا نصب‌شدنی بماند.
+      - name: Decode upload keystore
+        env:
+          NOVO_KEYSTORE_BASE64: ${{ secrets.NOVO_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$NOVO_KEYSTORE_BASE64" ]; then
+            echo "$NOVO_KEYSTORE_BASE64" | base64 -d > keystore/novo-upload.p12
+            echo "✅ upload keystore ready"
+          else
+            echo "ℹ️ NOVO_KEYSTORE_BASE64 is not set - the release APK will use the debug key"
+          fi
+
+      - name: Build APKs
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+          NOVO_KEY_ALIAS: ${{ secrets.NOVO_KEY_ALIAS }}
+          NOVO_KEY_PASSWORD: ${{ secrets.NOVO_KEY_PASSWORD }}
         run: |
           set -o pipefail
-          ./gradlew assembleDebug --stacktrace 2>&1 | tee build-log.txt
+          ./gradlew assembleDebug assembleRelease --stacktrace 2>&1 | tee build-log.txt
+
+      # اثر انگشت کلید امضا در لاگ چاپ می‌شود تا مطمئن شویم همهٔ بیلدها
+      # با یک کلید یکسان امضا می‌شوند (شرط نصب روی نسخهٔ قبلی).
+      - name: Show signing certificates
+        if: always()
+        run: |
+          for apk in \
+            app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/release/app-release.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk ; do
+            [ -f "$apk" ] || continue
+            echo "::group::signature of $apk"
+            keytool -printcert -jarfile "$apk" | head -14 || true
+            echo "::endgroup::"
+          done
 
       # خطاهای کامپایل را به‌صورت Annotation نشان می‌دهد (حداکثر ۱۰ مورد)
       - name: Report build errors
@@ -95,13 +127,21 @@ jobs:
               print("::error::" + escaped)
           PY
 
-      - name: Upload APK Artifact
+      - name: Upload debug APK
         if: success()
         uses: actions/upload-artifact@v6
         with:
           name: my-app-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+      - name: Upload release APK
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
 
       # لاگ کامل بیلد (هم برای موفق و هم برای ناموفق) + گزارش‌های خطا
       - name: Upload build log

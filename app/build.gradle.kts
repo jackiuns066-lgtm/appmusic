@@ -19,10 +19,48 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  // The debug keystore is committed on purpose: GitHub runners would otherwise generate a new
+  // random debug key on every build, and Android refuses to install an APK over one that was
+  // signed with a different key ("package conflicts with an existing package").
+  signingConfigs {
+    getByName("debug") {
+      val debugKeystore = rootProject.file("keystore/novo-debug.p12")
+      if (debugKeystore.exists()) {
+        storeFile = debugKeystore
+        storePassword = "android"
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+        storeType = "PKCS12"
+      }
+    }
+
+    // Release/upload key: supplied through GitHub secrets (never committed).
+    val uploadKeystore = rootProject.file("keystore/novo-upload.p12")
+    val uploadPassword = providers.environmentVariable("NOVO_KEYSTORE_PASSWORD").orNull
+    if (uploadKeystore.exists() && !uploadPassword.isNullOrBlank()) {
+      create("release") {
+        storeFile = uploadKeystore
+        storePassword = uploadPassword
+        keyAlias = providers.environmentVariable("NOVO_KEY_ALIAS").orNull ?: "novo-upload"
+        keyPassword = providers.environmentVariable("NOVO_KEY_PASSWORD").orNull ?: uploadPassword
+        storeType = "PKCS12"
+        enableV1Signing = true
+        enableV2Signing = true
+        enableV3Signing = true
+      }
+    }
+  }
+
   buildTypes {
     release {
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+      // Falls back to the stable debug key when no upload key is configured, so the release APK
+      // is still installable while the store keys are being set up.
+      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+    }
+    debug {
+      signingConfig = signingConfigs.getByName("debug")
     }
   }
   compileOptions {
