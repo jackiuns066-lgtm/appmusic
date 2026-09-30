@@ -23,6 +23,15 @@ class PreferenceManager(context: Context) {
         private const val KEY_LOCK_SCREEN_CONTROLS = "lock_screen_controls"
         private const val KEY_SORT_ORDER = "sort_order"
         private const val KEY_INITIAL_SCAN_DONE = "initial_scan_done"
+        private const val KEY_ONBOARDING_DONE = "onboarding_done"
+        private const val KEY_RATE_PROMPT_STATE = "rate_prompt_state"
+        private const val KEY_RATE_PROMPT_SNOOZE_UNTIL = "rate_prompt_snooze_until"
+
+        // Rating prompt states
+        const val RATE_NEW = "new"
+        const val RATE_SNOOZED = "snoozed"
+        const val RATE_RATED = "rated"
+        const val RATE_NEVER = "never"
     }
 
     fun loadSettings(): AppSettings {
@@ -82,5 +91,27 @@ class PreferenceManager(context: Context) {
 
     fun setInitialScanCompleted(completed: Boolean) {
         prefs.edit().putBoolean(KEY_INITIAL_SCAN_DONE, completed).apply()
+    }
+
+    // ── first-run tour ────────────────────────────────────────────────────────
+    fun hasSeenOnboarding(): Boolean = prefs.getBoolean(KEY_ONBOARDING_DONE, false)
+
+    fun setOnboardingSeen(seen: Boolean) {
+        prefs.edit().putBoolean(KEY_ONBOARDING_DONE, seen).apply()
+    }
+
+    // ── "rate us" prompt ──────────────────────────────────────────────────────
+    // Asking at the right moment (after the app has proven itself) lifts the store
+    // rating far more than a static row in Settings, and a store rating is the single
+    // strongest organic discovery signal we control.
+    fun ratePromptState(): String = prefs.getString(KEY_RATE_PROMPT_STATE, RATE_NEW) ?: RATE_NEW
+
+    fun ratePromptSnoozeUntil(): Long = prefs.getLong(KEY_RATE_PROMPT_SNOOZE_UNTIL, 0L)
+
+    fun setRatePromptState(state: String, snoozeUntilMs: Long = 0L) {
+        prefs.edit()
+            .putString(KEY_RATE_PROMPT_STATE, state)
+            .putLong(KEY_RATE_PROMPT_SNOOZE_UNTIL, snoozeUntilMs)
+            .apply()
     }
 }

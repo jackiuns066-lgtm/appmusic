@@ -72,6 +72,34 @@ object BrandLinks {
         Toast.makeText(context.applicationContext, R.string.toast_link_failed, Toast.LENGTH_SHORT).show()
     }
 
+    /**
+     * The message we hand to WhatsApp / Telegram / Instagram when a user invites a friend.
+     *
+     * Word of mouth is the only acquisition channel this app has: it is free, ad-free and has no
+     * in-app purchases, so nothing else brings new users in. The link is UTM-tagged so the invite
+     * traffic is visible in the website analytics.
+     */
+    fun inviteMessage(context: Context): String = context.getString(
+        R.string.invite_message,
+        storeListingUrl() + UTM_SUFFIX
+    )
+
+    fun shareApp(context: Context) {
+        try {
+            val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.invite_subject))
+                putExtra(Intent.EXTRA_TEXT, inviteMessage(context))
+            }
+            context.startActivity(
+                Intent.createChooser(sendIntent, context.getString(R.string.invite_chooser))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        } catch (_: Exception) {
+            Toast.makeText(context.applicationContext, R.string.toast_link_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun openUrl(context: Context, url: String) {
         try {
             context.startActivity(

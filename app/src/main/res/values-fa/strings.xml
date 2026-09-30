@@ -265,4 +265,25 @@ webnovo.ir</string>
     <plurals name="widget_queue_count">
         <item quantity="other">%1$d آهنگ در صف پخش</item>
     </plurals>
+    <string name="onboarding_1_title">موسیقی شما، کاملاً آفلاین</string>
+    <string name="onboarding_1_desc">نوو همان آهنگ‌هایی را پخش می‌کند که روی گوشی خودتان است. بدون اینترنت، بدون تبلیغ و بدون ثبت‌نام.</string>
+    <string name="onboarding_2_title">ویجتی که واقعاً کار می‌کند</string>
+    <string name="onboarding_2_desc">کاور، تایم‌لاین و دکمه‌های شافل / قبلی / پخش / بعدی / تکرار و علاقه‌مندی، روی صفحهٔ اصلی گوشی.</string>
+    <string name="onboarding_3_title">اکولایزر و صفحهٔ قفل</string>
+    <string name="onboarding_3_desc">با اکولایزر ۵ باندی صدا را تنظیم کنید و پخش را از صفحهٔ قفل یا هندزفری کنترل کنید.</string>
+    <string name="onboarding_skip">رد کردن</string>
+    <string name="onboarding_next">بعدی</string>
+    <string name="onboarding_start">شروع کنیم</string>
+    <string name="rate_prompt_title">از نوو راضی هستید؟</string>
+    <string name="rate_prompt_desc">اگر نوو موسیقی‌تان را دلپذیرتر کرده، یک امتیاز کوچک برای یک تیم کوچک بسیار ارزش دارد.</string>
+    <string name="rate_prompt_why">امتیاز کاربران تعیین می‌کند آدم‌های جدید اصلاً اپ را پیدا می‌کنند یا نه؛ تنها تبلیغ ما همین است.</string>
+    <string name="rate_prompt_yes">امتیاز می‌دهم</string>
+    <string name="rate_prompt_later">بعداً</string>
+    <string name="rate_prompt_never">دیگر نپرس</string>
+    <string name="invite_title">دعوت دوستان</string>
+    <string name="invite_desc">نوو را در واتس‌اپ، تلگرام یا اینستاگرام معرفی کنید — یک پیام، بدون هزینه.</string>
+    <string name="invite_chooser">معرفی نوو به دوستان</string>
+    <string name="invite_subject">نوو را امتحان کن - پخش‌کنندهٔ آفلاین و بدون تبلیغ</string>
+    <string name="invite_message">من موسیقی‌ام را با نوو گوش می‌دهم: کاملاً آفلاین، بدون تبلیغ، رایگان، با ویجت و اکولایزر حرفه‌ای. امتحانش کن: %1$s</string>
+
 </resources>

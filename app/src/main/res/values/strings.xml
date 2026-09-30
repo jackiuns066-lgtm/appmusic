@@ -270,4 +270,25 @@ webnovo.ir</string>
         <item quantity="one">%1$d song in queue</item>
         <item quantity="other">%1$d songs in queue</item>
     </plurals>
+    <string name="onboarding_1_title">Your music, fully offline</string>
+    <string name="onboarding_1_desc">Novo plays the songs already on your phone. No internet, no ads, and nothing to sign up for.</string>
+    <string name="onboarding_2_title">A widget that really works</string>
+    <string name="onboarding_2_desc">Artwork, timeline and shuffle / previous / play / next / repeat / favourite right on your home screen.</string>
+    <string name="onboarding_3_title">Equalizer and lock screen</string>
+    <string name="onboarding_3_desc">Tune the sound with the 5-band equalizer and control playback from the lock screen or your headset.</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Let's go</string>
+    <string name="rate_prompt_title">Enjoying Novo?</string>
+    <string name="rate_prompt_desc">If Novo made your music nicer, a quick rating helps a small team a lot.</string>
+    <string name="rate_prompt_why">Ratings decide whether new people find the app at all - it is the only promotion we have.</string>
+    <string name="rate_prompt_yes">Rate now</string>
+    <string name="rate_prompt_later">Later</string>
+    <string name="rate_prompt_never">Don't ask again</string>
+    <string name="invite_title">Invite a friend</string>
+    <string name="invite_desc">Share Novo on WhatsApp, Telegram or Instagram - one message, no cost.</string>
+    <string name="invite_chooser">Share Novo Music Player</string>
+    <string name="invite_subject">Try Novo - an ad-free offline music player</string>
+    <string name="invite_message">I use Novo for my music: fully offline, no ads, free, with a beautiful widget and equalizer. Try it: %1$s</string>
+
 </resources>

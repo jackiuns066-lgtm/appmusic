@@ -63,6 +63,9 @@ import com.example.ui.screens.RecommendationsScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TracksScreen
 import kotlinx.coroutines.flow.collectLatest
+import com.example.data.brand.BrandLinks
+import com.example.ui.components.OnboardingDialog
+import com.example.ui.components.RatePromptDialog
 
 private data class NavItemData(
     val destination: ScreenDestination,
@@ -94,6 +97,8 @@ fun MainScreen(viewModel: MusicViewModel) {
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val isScanning by viewModel.isScanning.collectAsStateWithLifecycle()
+    val showOnboarding by viewModel.showOnboarding.collectAsStateWithLifecycle()
+    val showRatePrompt by viewModel.showRatePrompt.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -279,6 +284,21 @@ fun MainScreen(viewModel: MusicViewModel) {
                     }
                 }
             }
+        }
+
+        // First-run tour: only on the very first launch, before anything else.
+        if (showOnboarding) {
+            OnboardingDialog(onFinish = { viewModel.completeOnboarding() })
+        } else if (showRatePrompt) {
+            // Asked only after the player has been used enough to have an opinion (see MusicViewModel).
+            RatePromptDialog(
+                onRateNow = {
+                    BrandLinks.openStoreListing(baseContext)
+                    viewModel.onRatePromptRated()
+                },
+                onLater = { viewModel.onRatePromptSnoozed() },
+                onNever = { viewModel.onRatePromptDismissedForever() }
+            )
         }
     }
 }

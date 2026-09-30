@@ -692,6 +692,16 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 BrandLinkRow(
+                    icon = Icons.Default.Share,
+                    title = stringResource(R.string.invite_title),
+                    description = stringResource(R.string.invite_desc),
+                    testTag = "brand_invite_row",
+                    onClick = { BrandLinks.shareApp(context) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
                     icon = Icons.Default.Refresh,
                     title = stringResource(R.string.settings_update_title),
                     description = stringResource(R.string.settings_update_desc),

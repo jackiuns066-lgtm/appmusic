@@ -81,6 +81,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val mediaNotificationManager = MediaNotificationManager(context)
     private val preferenceManager = PreferenceManager(context)
 
+    companion object {
+        /** A user who has played this many songs has formed an opinion worth asking about. */
+        private const val RATE_PROMPT_MIN_PLAYS = 10
+
+        /** After "later", stay quiet for a week before asking again. */
+        private const val RATE_PROMPT_SNOOZE_MS = 7L * 24 * 60 * 60 * 1000
+    }
+
     val playbackState: StateFlow<PlaybackState> = playerEngine.playbackState
 
     val allTracks: StateFlow<List<TrackEntity>> = repository.allTracks
@@ -144,6 +152,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _settings = MutableStateFlow(preferenceManager.loadSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
+
+    /** First-run tour: shown once, right after the very first launch. */
+    private val _showOnboarding = MutableStateFlow(!preferenceManager.hasSeenOnboarding())
+    val showOnboarding: StateFlow<Boolean> = _showOnboarding.asStateFlow()
+
+    /** "Rate us" card: only after the app has proven itself (>= RATE_PROMPT_MIN_PLAYS plays). */
+    private val _showRatePrompt = MutableStateFlow(false)
+    val showRatePrompt: StateFlow<Boolean> = _showRatePrompt.asStateFlow()
 
     private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 5)
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
@@ -243,6 +259,55 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 preferenceManager.saveSettings(setts)
             }
         }
+
+        // Decide when to ask for a store rating (see RATE_PROMPT_MIN_PLAYS).
+        viewModelScope.launch {
+            // collect the repository flow directly so the UI-facing allTracks cache stays lazy
+            repository.allTracks.collect { tracks ->
+                maybeShowRatePrompt(tracks.sumOf { it.playCount })
+            }
+        }
+    }
+
+    /**
+     * The store rating is the strongest organic discovery signal we control, but asking too early
+     * (or after a "later") hurts. Ask once the user has really used the player, once per snooze
+     * period, and never again after a decision.
+     */
+    private fun maybeShowRatePrompt(totalPlays: Int) {
+        if (_showOnboarding.value || _showRatePrompt.value) return
+        if (totalPlays < RATE_PROMPT_MIN_PLAYS) return
+        when (preferenceManager.ratePromptState()) {
+            PreferenceManager.RATE_NEW -> _showRatePrompt.value = true
+            PreferenceManager.RATE_SNOOZED ->
+                if (System.currentTimeMillis() >= preferenceManager.ratePromptSnoozeUntil()) {
+                    _showRatePrompt.value = true
+                }
+            else -> Unit // rated / never
+        }
+    }
+
+    fun completeOnboarding() {
+        _showOnboarding.value = false
+        preferenceManager.setOnboardingSeen(true)
+    }
+
+    fun onRatePromptRated() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(PreferenceManager.RATE_RATED)
+    }
+
+    fun onRatePromptSnoozed() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(
+            PreferenceManager.RATE_SNOOZED,
+            System.currentTimeMillis() + RATE_PROMPT_SNOOZE_MS
+        )
+    }
+
+    fun onRatePromptDismissedForever() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(PreferenceManager.RATE_NEVER)
     }
 
     fun navigateTo(screen: ScreenDestination) {
