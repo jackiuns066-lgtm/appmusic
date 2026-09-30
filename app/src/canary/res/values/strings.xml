@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overrides the launcher label for the "canary" build so it is easy to tell the two
+     installations apart on a phone that has both. -->
+<resources>
+    <string name="app_name">Novo Canary</string>
+</resources>

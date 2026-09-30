@@ -73,7 +73,6 @@ android {
       versionNameSuffix = "-canary"
       isMinifyEnabled = false
       signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
-      resValue("string", "app_name", "Novo Canary")
     }
   }
   compileOptions {
