@@ -112,6 +112,26 @@ jobs:
             echo "::warning::$(basename "$apk") SHA256: ${FP:-unknown}"
           done
 
+      # شناسهٔ بسته و کد نسخهٔ هر خروجی را در لاگ چاپ می‌کند تا از تب Actions قابل بررسی باشد
+      - name: Show package ids and version codes
+        if: always()
+        run: |
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)
+          echo "aapt2: ${AAPT2:-not found}"
+          for apk in \
+            app/build/outputs/apk/standard/debug/app-standard-debug.apk \
+            app/build/outputs/apk/standard/release/app-standard-release.apk \
+            app/build/outputs/apk/legacy/release/app-legacy-release.apk ; do
+            [ -f "$apk" ] || continue
+            NAME=$(basename "$apk")
+            if [ -n "$AAPT2" ]; then
+              PKG=$("$AAPT2" dump packagename "$apk" 2>/dev/null || echo unknown)
+            else
+              PKG=unknown
+            fi
+            echo "::notice::$NAME -> package=$PKG"
+          done
+
       # بررسی امضا: اگر APK با کلید ثابت پروژه امضا نشده باشد، بیلد Fail می‌شود
       - name: Verify debug APK signature
         if: success()
