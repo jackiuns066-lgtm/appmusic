@@ -180,6 +180,8 @@ webnovo.ir</string>
     <string name="now_playing_subtitle">Now playing</string>
     <string name="now_playing_effect_prefix">Effect: %1$s</string>
     <string name="now_playing_swipe_hint">Swipe left or right to skip</string>
+    <string name="now_playing_swipe_next">Next: %1$s</string>
+    <string name="now_playing_swipe_previous">Previous: %1$s</string>
     <string name="now_playing_stop_after_active">Stop after this song (on)</string>
     <string name="now_playing_stop_after">Stop after song</string>
     <string name="now_playing_queue_title">Play queue (%1$d songs)</string>

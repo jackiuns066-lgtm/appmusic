@@ -180,6 +180,8 @@ webnovo.ir</string>
     <string name="now_playing_subtitle">در حال پخش</string>
     <string name="now_playing_effect_prefix">جلوه: %1$s</string>
     <string name="now_playing_swipe_hint">برای رد کردن آهنگ به چپ یا راست بکشید</string>
+    <string name="now_playing_swipe_next">بعدی: %1$s</string>
+    <string name="now_playing_swipe_previous">قبلی: %1$s</string>
     <string name="now_playing_stop_after_active">توقف بعد این آهنگ (فعال)</string>
     <string name="now_playing_stop_after">توقف خودکار</string>
     <string name="now_playing_queue_title">صف پخش (%1$d آهنگ)</string>

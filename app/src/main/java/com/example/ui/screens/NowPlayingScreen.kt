@@ -1,13 +1,17 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode as AnimRepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -82,6 +86,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -102,6 +107,7 @@ import com.example.ui.components.TrackCoverImage
 import com.example.ui.components.TrackCoverImageFill
 import com.example.ui.i18n.displayAlbum
 import com.example.ui.i18n.displayArtist
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlinx.coroutines.launch
@@ -267,27 +273,101 @@ fun NowPlayingScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         // Dynamic Visualizer Display (Neon Vinyl / Spectrum Wave / 3D Glass / Pulse Rings)
-        var dragOffsetAccumulator by remember { mutableFloatStateOf(0f) }
+        // Swiping drags the artwork with the finger; past the threshold the card flies out and the
+        // next / previous song slides back in from the other side, so the direction is obvious.
+        var swipeOffset by remember { mutableFloatStateOf(0f) }
+        var isSwipeAnimating by remember { mutableStateOf(false) }
+        val swipeHintOpacity = (abs(swipeOffset) / 180f).coerceIn(0f, 1f)
+
+        val queue = playbackState.currentQueue
+        val currentIndex = queue.indexOfFirst { it.id == track.id }
+        val nextTrack = if (queue.size > 1 && currentIndex >= 0) {
+            queue[(currentIndex + 1) % queue.size]
+        } else null
+        val previousTrack = if (currentIndex > 0) queue[currentIndex - 1] else null
+        val swipeHintLabel = when {
+            swipeOffset < -6f && nextTrack != null ->
+                stringResource(R.string.now_playing_swipe_next, nextTrack.title)
+            swipeOffset > 6f && previousTrack != null ->
+                stringResource(R.string.now_playing_swipe_previous, previousTrack.title)
+            else -> null
+        }
+
         Box(
             modifier = Modifier
                 .size(280.dp)
+                .graphicsLayer {
+                    translationX = swipeOffset
+                    rotationZ = swipeOffset / size.width * 7f
+                    val scale = 1f - (abs(swipeOffset) / size.width * 0.18f).coerceAtMost(0.18f)
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = 1f - (abs(swipeOffset) / size.width * 0.45f).coerceAtMost(0.45f)
+                }
                 .pointerInput(Unit) {
+                    val maxDrag = size.width * 0.85f
+                    val threshold = size.width * 0.26f
+                    val flyOutDistance = size.width * 1.25f
+
                     detectHorizontalDragGestures(
-                        onDragStart = { dragOffsetAccumulator = 0f },
                         onDragEnd = {
-                            if (dragOffsetAccumulator < -80f) {
-                                // Swiped left -> Next
-                                onSkipNext()
-                            } else if (dragOffsetAccumulator > 80f) {
-                                // Swiped right -> Previous
-                                onSkipPrevious()
+                            val start = swipeOffset
+                            if (!isSwipeAnimating && abs(start) > threshold) {
+                                isSwipeAnimating = true
+                                val goingNext = start < 0f
+                                scope.launch {
+                                    animate(
+                                        initialValue = start,
+                                        targetValue = if (goingNext) -flyOutDistance else flyOutDistance,
+                                        animationSpec = tween(
+                                            durationMillis = 190,
+                                            easing = FastOutLinearInEasing
+                                        )
+                                    ) { value, _ -> swipeOffset = value }
+
+                                    if (goingNext) onSkipNext() else onSkipPrevious()
+
+                                    // The new song slides back in from the opposite edge.
+                                    swipeOffset = if (goingNext) flyOutDistance * 0.45f else -flyOutDistance * 0.45f
+                                    animate(
+                                        initialValue = swipeOffset,
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = 0.72f,
+                                            stiffness = Spring.StiffnessLow
+                                        )
+                                    ) { value, _ -> swipeOffset = value }
+
+                                    swipeOffset = 0f
+                                    isSwipeAnimating = false
+                                }
+                            } else {
+                                scope.launch {
+                                    animate(
+                                        initialValue = start,
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = 0.8f,
+                                            stiffness = Spring.StiffnessMedium
+                                        )
+                                    ) { value, _ -> swipeOffset = value }
+                                }
                             }
-                            dragOffsetAccumulator = 0f
                         },
-                        onDragCancel = { dragOffsetAccumulator = 0f },
+                        onDragCancel = {
+                            scope.launch {
+                                animate(
+                                    initialValue = swipeOffset,
+                                    targetValue = 0f,
+                                    animationSpec = spring()
+                                ) { value, _ -> swipeOffset = value }
+                            }
+                        },
                         onHorizontalDrag = { change, dragAmount ->
                             change.consume()
-                            dragOffsetAccumulator += dragAmount
+                            if (!isSwipeAnimating) {
+                                swipeOffset = (swipeOffset + dragAmount).coerceIn(-maxDrag, maxDrag)
+                            }
                         }
                     )
                 }
@@ -299,6 +379,38 @@ fun NowPlayingScreen(
                 "glass_3d" -> Floating3DGlassVisualizer(isPlaying = playbackState.isPlaying, track = track)
                 "pulse_rings" -> PulsingRingsVisualizer(isPlaying = playbackState.isPlaying, track = track)
                 else -> NeonVinylVisualizer(isPlaying = playbackState.isPlaying, track = track)
+            }
+
+            // Live preview of where the swipe is heading
+            if (swipeHintLabel != null && swipeHintOpacity > 0.05f) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 14.dp)
+                        .graphicsLayer { alpha = swipeHintOpacity }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (swipeOffset < 0f) Icons.Rounded.SkipNext else Icons.Rounded.SkipPrevious,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = swipeHintLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
 

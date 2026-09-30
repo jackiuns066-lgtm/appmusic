@@ -5,6 +5,11 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -58,11 +65,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -79,6 +88,8 @@ import com.example.ui.SortOrder
 import com.example.ui.components.TrackCoverImage
 import com.example.ui.i18n.displayArtist
 import java.util.Locale
+import kotlin.math.abs
+import kotlinx.coroutines.launch
 
 @Composable
 fun TracksScreen(
@@ -112,13 +123,15 @@ fun TracksScreen(
         )
     }
 
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
     val tabTitles = listOf(
         stringResource(R.string.tracks_tab_all),
         stringResource(R.string.tracks_tab_favorites),
         stringResource(R.string.tracks_tab_most_played),
         stringResource(R.string.tracks_tab_recent)
     )
+    // One pager page per tab: swiping the list changes the tab, tapping a tab slides the list.
+    val pagerState = rememberPagerState(pageCount = { tabTitles.size })
 
     var showSortMenu by remember { mutableStateOf(false) }
     var trackForPlaylist by remember { mutableStateOf<TrackEntity?>(null) }
@@ -135,34 +148,6 @@ fun TracksScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         uri?.let { onImportAudio(it) }
-    }
-
-    val activeList = when (selectedTabIndex) {
-        0 -> allTracks
-        1 -> favoriteTracks
-        2 -> mostPlayedTracks
-        3 -> recentlyPlayedTracks
-        else -> allTracks
-    }
-
-    val filteredList = remember(activeList, searchQuery, sortOrder) {
-        var res = if (searchQuery.isBlank()) {
-            activeList
-        } else {
-            activeList.filter {
-                it.title.contains(searchQuery, ignoreCase = true) ||
-                it.artist.contains(searchQuery, ignoreCase = true) ||
-                it.album.contains(searchQuery, ignoreCase = true)
-            }
-        }
-
-        when (sortOrder) {
-            SortOrder.RECENTLY_ADDED -> res.sortedByDescending { it.addedAt }
-            SortOrder.TITLE_AZ -> res.sortedBy { it.title.lowercase(Locale.getDefault()) }
-            SortOrder.ARTIST_AZ -> res.sortedBy { it.artist.lowercase(Locale.getDefault()) }
-            SortOrder.MOST_PLAYED -> res.sortedByDescending { it.playCount }
-            SortOrder.DURATION -> res.sortedByDescending { it.durationMs }
-        }
     }
 
     Column(
@@ -323,81 +308,141 @@ fun TracksScreen(
             }
         }
 
-        // Tabs
+        // Tabs — kept in sync with the pager, animated highlight
         TabRow(
-            selectedTabIndex = selectedTabIndex,
+            selectedTabIndex = pagerState.currentPage,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.primary
         ) {
             tabTitles.forEachIndexed { index, title ->
+                val selected = pagerState.currentPage == index
+                val labelColor by animateColorAsState(
+                    targetValue = if (selected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    animationSpec = tween(durationMillis = 280),
+                    label = "tab_label_color"
+                )
+                val labelScale by animateFloatAsState(
+                    targetValue = if (selected) 1f else 0.9f,
+                    animationSpec = spring(
+                        dampingRatio = 0.55f,
+                        stiffness = Spring.StiffnessMediumLow
+                    ),
+                    label = "tab_label_scale"
+                )
                 Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
+                    selected = selected,
+                    onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                    modifier = Modifier.testTag("tracks_tab_$index"),
                     text = {
                         Text(
                             text = title,
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                            color = labelColor,
+                            modifier = Modifier.graphicsLayer {
+                                scaleX = labelScale
+                                scaleY = labelScale
+                            }
                         )
                     }
                 )
             }
         }
 
-        // Track List
-        if (filteredList.isEmpty()) {
+        // Track List — one pager page per tab, so the list follows the finger while swiping
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = 1
+        ) { page ->
+            val pageTracks = when (page) {
+                1 -> favoriteTracks
+                2 -> mostPlayedTracks
+                3 -> recentlyPlayedTracks
+                else -> allTracks
+            }
+            val pageList = remember(pageTracks, searchQuery, sortOrder) {
+                filterAndSortTracks(pageTracks, searchQuery, sortOrder)
+            }
+
+            // Attractive cross-transition: the incoming page fades and scales in while sliding.
+            val pageDistance = abs((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction)
+                .coerceIn(0f, 1f)
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Rounded.MusicNote,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = if (searchQuery.isNotBlank()) stringResource(R.string.tracks_empty_search) else stringResource(R.string.tracks_empty_list),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = {
-                            val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                Manifest.permission.READ_MEDIA_AUDIO
-                            } else {
-                                Manifest.permission.READ_EXTERNAL_STORAGE
-                            }
-                            permissionLauncher.launch(perm)
-                        }
-                    ) {
-                        Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.action_scan_device_files))
+                    .graphicsLayer {
+                        alpha = 1f - 0.45f * pageDistance
+                        val scale = 1f - 0.06f * pageDistance
+                        scaleX = scale
+                        scaleY = scale
+                        translationY = 26.dp.toPx() * pageDistance
                     }
-                }
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                items(filteredList, key = { it.id }) { track ->
-                    TrackItemRow(
-                        track = track,
-                        isPlaying = playbackState.currentTrack?.id == track.id && playbackState.isPlaying,
-                        isCurrent = playbackState.currentTrack?.id == track.id,
-                        onClick = { onTrackClick(track, filteredList) },
-                        onToggleFavorite = { onToggleFavorite(track) },
-                        onAddToPlaylist = { trackForPlaylist = track },
-                        onShare = { shareTrack(track) }
-                    )
+                if (pageList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Rounded.MusicNote,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank()) {
+                                    stringResource(R.string.tracks_empty_search)
+                                } else {
+                                    stringResource(R.string.tracks_empty_list)
+                                },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        Manifest.permission.READ_MEDIA_AUDIO
+                                    } else {
+                                        Manifest.permission.READ_EXTERNAL_STORAGE
+                                    }
+                                    permissionLauncher.launch(perm)
+                                }
+                            ) {
+                                Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.action_scan_device_files))
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        items(pageList, key = { it.id }) { track ->
+                            TrackItemRow(
+                                track = track,
+                                isPlaying = playbackState.currentTrack?.id == track.id && playbackState.isPlaying,
+                                isCurrent = playbackState.currentTrack?.id == track.id,
+                                onClick = { onTrackClick(track, pageList) },
+                                onToggleFavorite = { onToggleFavorite(track) },
+                                onAddToPlaylist = { trackForPlaylist = track },
+                                onShare = { shareTrack(track) }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -620,4 +665,29 @@ fun formatDuration(ms: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
+}
+
+/** Search + sort helper shared by every tab of the songs screen. */
+private fun filterAndSortTracks(
+    tracks: List<TrackEntity>,
+    searchQuery: String,
+    sortOrder: SortOrder
+): List<TrackEntity> {
+    val filtered = if (searchQuery.isBlank()) {
+        tracks
+    } else {
+        tracks.filter {
+            it.title.contains(searchQuery, ignoreCase = true) ||
+                it.artist.contains(searchQuery, ignoreCase = true) ||
+                it.album.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    return when (sortOrder) {
+        SortOrder.RECENTLY_ADDED -> filtered.sortedByDescending { it.addedAt }
+        SortOrder.TITLE_AZ -> filtered.sortedBy { it.title.lowercase(Locale.getDefault()) }
+        SortOrder.ARTIST_AZ -> filtered.sortedBy { it.artist.lowercase(Locale.getDefault()) }
+        SortOrder.MOST_PLAYED -> filtered.sortedByDescending { it.playCount }
+        SortOrder.DURATION -> filtered.sortedByDescending { it.durationMs }
+    }
 }
