@@ -1,6 +1,7 @@
 package com.example.data.audio
 
 import android.content.Context
+import com.example.R
 import com.example.data.local.TrackEntity
 import java.io.File
 import java.io.FileOutputStream
@@ -9,7 +10,6 @@ import java.nio.ByteOrder
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.sin
-import com.example.R
 
 enum class SynthType {
     ACOUSTIC_PLUCK, SYNTH_BASS, LOFI_KEYS, TRADITIONAL_SETAR

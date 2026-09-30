@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -62,16 +63,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.BuildConfig
 import com.example.R
+import com.example.data.brand.BrandLinks
 import com.example.ui.AppSettings
 import com.example.ui.i18n.AppLanguage
-import com.example.BuildConfig
 
 @Composable
 fun SettingsScreen(
@@ -637,6 +640,56 @@ fun SettingsScreen(
                 }
             }
         }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Brand section: our other work + a measurable way to support the app
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Storefront,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_brand_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_brand_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Language,
+                    title = stringResource(R.string.brand_website_title),
+                    description = stringResource(R.string.brand_website_desc),
+                    testTag = "brand_website_row",
+                    onClick = { BrandLinks.openWebsite(context) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Star,
+                    title = stringResource(R.string.brand_rate_title),
+                    description = stringResource(R.string.brand_rate_desc),
+                    testTag = "brand_rate_row",
+                    onClick = { BrandLinks.openStoreListing(context) }
+                )
+            }
+        }
     }
 
     if (showSleepTimerDialog) {
@@ -667,6 +720,52 @@ fun SettingsScreen(
                     Text(stringResource(R.string.action_cancel))
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun BrandLinkRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    testTag: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            imageVector = Icons.Default.OpenInBrowser,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
         )
     }
 }

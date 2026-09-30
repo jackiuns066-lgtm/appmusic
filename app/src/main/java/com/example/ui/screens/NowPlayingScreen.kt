@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode as AnimRepeatMode
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -67,6 +69,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +82,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -92,6 +96,7 @@ import com.example.data.audio.PlaybackState
 import com.example.data.audio.RepeatMode
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
+import com.example.data.share.BrandPoster
 import com.example.data.share.TrackSharing
 import com.example.ui.components.TrackCoverImage
 import com.example.ui.components.TrackCoverImageFill
@@ -99,6 +104,7 @@ import com.example.ui.i18n.displayAlbum
 import com.example.ui.i18n.displayArtist
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,6 +128,7 @@ fun NowPlayingScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val track = playbackState.currentTrack
     if (track == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -201,6 +208,35 @@ fun NowPlayingScreen(
                     Icon(
                         imageVector = Icons.Default.Share,
                         contentDescription = stringResource(R.string.cd_share)
+                    )
+                }
+
+                // Brand poster: a ready to post story image with cover art + Novo / webnovo.ir
+                IconButton(
+                    onClick = {
+                        val accentColor = MaterialTheme.colorScheme.primary.toArgb()
+                        scope.launch {
+                            val shared = BrandPoster.share(
+                                context = context,
+                                track = track,
+                                accentColor = accentColor,
+                                chooserTitle = context.getString(R.string.share_poster_chooser),
+                                subject = context.getString(R.string.share_track_subject, track.title, track.artist),
+                                text = context.getString(R.string.share_poster_text, track.title, track.artist),
+                                brandLine = context.getString(R.string.poster_brand_line),
+                                tagline = context.getString(R.string.poster_tagline)
+                            )
+                            if (!shared) {
+                                Toast.makeText(context, R.string.share_poster_failed, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    modifier = Modifier.testTag("now_playing_poster_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Image,
+                        contentDescription = stringResource(R.string.cd_share_poster),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
