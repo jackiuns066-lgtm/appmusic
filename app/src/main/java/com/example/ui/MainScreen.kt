@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,15 +40,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.R
 import com.example.ui.components.MiniPlayer
+import com.example.ui.i18n.AppLanguage
+import com.example.ui.i18n.LocaleAwareContext
 import com.example.ui.screens.EqualizerScreen
 import com.example.ui.screens.FoldersScreen
 import com.example.ui.screens.NowPlayingScreen
@@ -105,21 +112,36 @@ fun MainScreen(viewModel: MusicViewModel) {
         }
     }
 
-    val layoutDirection = if (settings.isPersian) LayoutDirection.Rtl else LayoutDirection.Ltr
+    val baseContext = LocalContext.current
+    val deviceLanguage = remember(baseContext) { AppLanguage.deviceLanguage(baseContext) }
+    val isPersian = AppLanguage.isPersian(settings.languageMode, deviceLanguage)
+    val localizedContext = remember(baseContext, isPersian) {
+        if (AppLanguage.isPersianLanguageCode(deviceLanguage) == isPersian) {
+            baseContext
+        } else {
+            LocaleAwareContext(baseContext, AppLanguage.localeFor(settings.languageMode, deviceLanguage))
+        }
+    }
 
-    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+    CompositionLocalProvider(
+        LocalContext provides localizedContext,
+        LocalConfiguration provides localizedContext.resources.configuration,
+        LocalLayoutDirection provides if (isPersian) LayoutDirection.Rtl else LayoutDirection.Ltr
+    ) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             bottomBar = {
                 if (currentScreen != ScreenDestination.NOW_PLAYING) {
-                    Column {
+                    Column(modifier = Modifier.navigationBarsPadding()) {
                         // Persistent Mini Player above bottom bar
                         if (playbackState.currentTrack != null) {
                             MiniPlayer(
                                 playbackState = playbackState,
                                 onPlayPause = { viewModel.togglePlayPause() },
                                 onSkipNext = { viewModel.playNextTrack() },
+                                onSkipPrevious = { viewModel.playPreviousTrack() },
                                 onToggleFavorite = { viewModel.toggleFavorite(it) },
+                                onSeekTo = { viewModel.seekTo(it) },
                                 onClick = { viewModel.navigateTo(ScreenDestination.NOW_PLAYING) }
                             )
                         }
@@ -150,7 +172,6 @@ fun MainScreen(viewModel: MusicViewModel) {
                             searchQuery = searchQuery,
                             sortOrder = sortOrder,
                             isScanning = isScanning,
-                            isPersian = settings.isPersian,
                             onSearchQueryChange = { viewModel.setSearchQuery(it) },
                             onSortOrderChange = { viewModel.setSortOrder(it) },
                             onScanDevice = { viewModel.scanDeviceAudio() },
@@ -222,7 +243,7 @@ fun MainScreen(viewModel: MusicViewModel) {
                         SettingsScreen(
                             settings = settings,
                             sleepTimerRemaining = playbackState.sleepTimerMinutesRemaining,
-                            onTogglePersian = { viewModel.togglePersian() },
+                            onSetLanguage = { viewModel.setLanguage(it) },
                             onToggleAmoled = { viewModel.toggleAmoled() },
                             onSetAccentTheme = { viewModel.setAccentTheme(it) },
                             onSetNowPlayingStyle = { viewModel.setNowPlayingStyle(it) },
@@ -269,12 +290,12 @@ private fun CustomFloatingBottomNavBar(
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        NavItemData(ScreenDestination.TRACKS, "آهنگ‌ها", Icons.Default.MusicNote, "nav_tab_tracks"),
-        NavItemData(ScreenDestination.CATEGORIES, "دسته‌بندی", Icons.Default.Folder, "nav_tab_categories"),
-        NavItemData(ScreenDestination.PLAYLISTS, "لیست‌ها", Icons.Default.QueueMusic, "nav_tab_playlists"),
-        NavItemData(ScreenDestination.RECOMMENDATIONS, "پیشنهادی", Icons.Default.AutoAwesome, "nav_tab_recommendations"),
-        NavItemData(ScreenDestination.EQUALIZER, "اکولایزر", Icons.Default.Equalizer, "nav_tab_equalizer"),
-        NavItemData(ScreenDestination.SETTINGS, "تنظیمات", Icons.Default.Settings, "nav_tab_settings")
+        NavItemData(ScreenDestination.TRACKS, stringResource(R.string.nav_tracks), Icons.Default.MusicNote, "nav_tab_tracks"),
+        NavItemData(ScreenDestination.CATEGORIES, stringResource(R.string.nav_categories), Icons.Default.Folder, "nav_tab_categories"),
+        NavItemData(ScreenDestination.PLAYLISTS, stringResource(R.string.nav_playlists), Icons.Default.QueueMusic, "nav_tab_playlists"),
+        NavItemData(ScreenDestination.RECOMMENDATIONS, stringResource(R.string.nav_recommendations), Icons.Default.AutoAwesome, "nav_tab_recommendations"),
+        NavItemData(ScreenDestination.EQUALIZER, stringResource(R.string.nav_equalizer), Icons.Default.Equalizer, "nav_tab_equalizer"),
+        NavItemData(ScreenDestination.SETTINGS, stringResource(R.string.nav_settings), Icons.Default.Settings, "nav_tab_settings")
     )
 
     Surface(

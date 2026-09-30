@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.CountDownTimer
 import android.util.Log
 import com.example.data.local.TrackEntity
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
 
 enum class RepeatMode {
     OFF, ONE, ALL
@@ -129,6 +129,9 @@ class AudioPlayerEngine(private val context: Context) {
 
     var onTrackCompletedCallback: (() -> Unit)? = null
     var onStopAfterTrackTriggeredCallback: (() -> Unit)? = null
+    /** Set by the view model so the notification / widget buttons can skip tracks. */
+    var onSkipNextRequested: (() -> Unit)? = null
+    var onSkipPreviousRequested: (() -> Unit)? = null
 
     init {
         initMediaPlayer()

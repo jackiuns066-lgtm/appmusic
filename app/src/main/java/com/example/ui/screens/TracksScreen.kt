@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.rounded.MusicNote
@@ -62,16 +63,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
+import com.example.data.share.TrackSharing
 import com.example.ui.SortOrder
 import com.example.ui.components.TrackCoverImage
+import com.example.ui.i18n.displayArtist
 import java.util.Locale
 
 @Composable
@@ -85,7 +91,6 @@ fun TracksScreen(
     searchQuery: String,
     sortOrder: SortOrder,
     isScanning: Boolean,
-    isPersian: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onSortOrderChange: (SortOrder) -> Unit,
     onScanDevice: () -> Unit,
@@ -96,8 +101,24 @@ fun TracksScreen(
     onCreatePlaylistAndAddTrack: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val shareTrack: (TrackEntity) -> Unit = { sharedTrack ->
+        TrackSharing.shareTrack(
+            context = context,
+            track = sharedTrack,
+            chooserTitle = context.getString(R.string.share_chooser_song),
+            subject = context.getString(R.string.share_track_subject, sharedTrack.title, sharedTrack.artist),
+            text = context.getString(R.string.share_song_text, sharedTrack.title, sharedTrack.artist)
+        )
+    }
+
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val tabTitles = listOf("همه آهنگ‌ها", "علاقه‌مندی‌ها", "پربازدیدترین‌ها", "اخیراً پخش‌شده")
+    val tabTitles = listOf(
+        stringResource(R.string.tracks_tab_all),
+        stringResource(R.string.tracks_tab_favorites),
+        stringResource(R.string.tracks_tab_most_played),
+        stringResource(R.string.tracks_tab_recent)
+    )
 
     var showSortMenu by remember { mutableStateOf(false) }
     var trackForPlaylist by remember { mutableStateOf<TrackEntity?>(null) }
@@ -174,7 +195,7 @@ fun TracksScreen(
                 )
             }
             Text(
-                text = "نوین وب",
+                text = stringResource(R.string.tracks_brand_team),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
             )
@@ -196,7 +217,7 @@ fun TracksScreen(
                     .testTag("track_search_field"),
                 placeholder = {
                     Text(
-                        "جستجو در آهنگ‌ها، خواننده‌ها...",
+                        stringResource(R.string.tracks_search_hint),
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -207,7 +228,7 @@ fun TracksScreen(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "جستجو",
+                        contentDescription = stringResource(R.string.cd_search),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -220,7 +241,7 @@ fun TracksScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "پاک کردن",
+                                contentDescription = stringResource(R.string.cd_clear),
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -245,30 +266,30 @@ fun TracksScreen(
                     onClick = { showSortMenu = true },
                     modifier = Modifier.testTag("sort_button")
                 ) {
-                    Icon(imageVector = Icons.Default.Sort, contentDescription = "مرتب‌سازی")
+                    Icon(imageVector = Icons.Default.Sort, contentDescription = stringResource(R.string.cd_sort))
                 }
                 DropdownMenu(
                     expanded = showSortMenu,
                     onDismissRequest = { showSortMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("جدیدترین‌ها") },
+                        text = { Text(stringResource(R.string.sort_recently_added)) },
                         onClick = { onSortOrderChange(SortOrder.RECENTLY_ADDED); showSortMenu = false }
                     )
                     DropdownMenuItem(
-                        text = { Text("عنوان (الف-ی)") },
+                        text = { Text(stringResource(R.string.sort_title)) },
                         onClick = { onSortOrderChange(SortOrder.TITLE_AZ); showSortMenu = false }
                     )
                     DropdownMenuItem(
-                        text = { Text("نام هنرمند") },
+                        text = { Text(stringResource(R.string.sort_artist)) },
                         onClick = { onSortOrderChange(SortOrder.ARTIST_AZ); showSortMenu = false }
                     )
                     DropdownMenuItem(
-                        text = { Text("بیشترین پخش") },
+                        text = { Text(stringResource(R.string.sort_most_played)) },
                         onClick = { onSortOrderChange(SortOrder.MOST_PLAYED); showSortMenu = false }
                     )
                     DropdownMenuItem(
-                        text = { Text("مدت زمان") },
+                        text = { Text(stringResource(R.string.sort_duration)) },
                         onClick = { onSortOrderChange(SortOrder.DURATION); showSortMenu = false }
                     )
                 }
@@ -289,7 +310,7 @@ fun TracksScreen(
                 if (isScanning) {
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
                 } else {
-                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "اسکن آهنگ‌های دستگاه")
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_scan_device))
                 }
             }
 
@@ -298,7 +319,7 @@ fun TracksScreen(
                 onClick = { importPickerLauncher.launch(arrayOf("audio/*")) },
                 modifier = Modifier.testTag("import_audio_button")
             ) {
-                Icon(imageVector = Icons.Default.FolderOpen, contentDescription = "افزودن فایل صوتی")
+                Icon(imageVector = Icons.Default.FolderOpen, contentDescription = stringResource(R.string.cd_import_audio))
             }
         }
 
@@ -340,7 +361,7 @@ fun TracksScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = if (searchQuery.isNotBlank()) "هیچ آهنگی با این مشخصات یافت نشد" else "آهنگی در این بخش موجود نیست",
+                        text = if (searchQuery.isNotBlank()) stringResource(R.string.tracks_empty_search) else stringResource(R.string.tracks_empty_list),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -357,7 +378,7 @@ fun TracksScreen(
                     ) {
                         Icon(imageVector = Icons.Default.Refresh, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("اسکن فایل‌های دستگاه")
+                        Text(stringResource(R.string.action_scan_device_files))
                     }
                 }
             }
@@ -374,7 +395,8 @@ fun TracksScreen(
                         isCurrent = playbackState.currentTrack?.id == track.id,
                         onClick = { onTrackClick(track, filteredList) },
                         onToggleFavorite = { onToggleFavorite(track) },
-                        onAddToPlaylist = { trackForPlaylist = track }
+                        onAddToPlaylist = { trackForPlaylist = track },
+                        onShare = { shareTrack(track) }
                     )
                 }
             }
@@ -408,6 +430,7 @@ fun TrackItemRow(
     onClick: () -> Unit,
     onToggleFavorite: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    onShare: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -450,7 +473,7 @@ fun TrackItemRow(
                 Spacer(modifier = Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = track.artist,
+                        text = displayArtist(track.artist),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -471,7 +494,7 @@ fun TrackItemRow(
             ) {
                 Icon(
                     imageVector = if (track.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "علاقه‌مندی",
+                    contentDescription = stringResource(R.string.cd_favorite),
                     tint = if (track.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -482,9 +505,22 @@ fun TrackItemRow(
             ) {
                 Icon(
                     imageVector = Icons.Default.PlaylistAdd,
-                    contentDescription = "افزودن به لیست",
+                    contentDescription = stringResource(R.string.cd_add_to_playlist),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (onShare != null) {
+                IconButton(
+                    onClick = onShare,
+                    modifier = Modifier.testTag("share_btn_${track.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = stringResource(R.string.cd_share),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -503,12 +539,12 @@ fun AddToPlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("افزودن «${track.title}» به لیست") },
+        title = { Text(stringResource(R.string.dialog_add_to_playlist_title, track.title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (playlists.isEmpty() && !showCreateField) {
                     Text(
-                        text = "هنوز هیچ لیست پخشی ایجاد نشده است.",
+                        text = stringResource(R.string.playlist_none_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -544,7 +580,7 @@ fun AddToPlaylistDialog(
                     OutlinedTextField(
                         value = newPlaylistName,
                         onValueChange = { newPlaylistName = it },
-                        label = { Text("نام لیست جدید") },
+                        label = { Text(stringResource(R.string.label_new_playlist_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -561,19 +597,19 @@ fun AddToPlaylistDialog(
                     },
                     enabled = newPlaylistName.isNotBlank()
                 ) {
-                    Text("ایجاد و افزودن آهنگ")
+                    Text(stringResource(R.string.action_create_and_add))
                 }
             } else {
                 Button(onClick = { showCreateField = true }) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("لیست جدید")
+                    Text(stringResource(R.string.action_new_playlist))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("انصراف")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

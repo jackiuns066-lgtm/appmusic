@@ -4,13 +4,15 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.ui.AppSettings
 import com.example.ui.SortOrder
+import com.example.ui.i18n.AppLanguage
 
 class PreferenceManager(context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences("ava_music_settings_pref", Context.MODE_PRIVATE)
 
     companion object {
-        private const val KEY_IS_PERSIAN = "is_persian"
+        private const val KEY_IS_PERSIAN = "is_persian" // legacy RTL toggle, kept for migration
+        private const val KEY_LANGUAGE_MODE = "language_mode"
         private const val KEY_IS_AMOLED = "is_amoled"
         private const val KEY_ACCENT_THEME = "accent_theme"
         private const val KEY_NOW_PLAYING_STYLE = "now_playing_style"
@@ -25,7 +27,7 @@ class PreferenceManager(context: Context) {
 
     fun loadSettings(): AppSettings {
         return AppSettings(
-            isPersian = prefs.getBoolean(KEY_IS_PERSIAN, true),
+            languageMode = loadLanguageMode(),
             isAmoledDark = prefs.getBoolean(KEY_IS_AMOLED, false),
             accentTheme = prefs.getString(KEY_ACCENT_THEME, "gold") ?: "gold",
             sleepTimerMinutes = 0,
@@ -40,7 +42,7 @@ class PreferenceManager(context: Context) {
 
     fun saveSettings(settings: AppSettings) {
         prefs.edit()
-            .putBoolean(KEY_IS_PERSIAN, settings.isPersian)
+            .putString(KEY_LANGUAGE_MODE, settings.languageMode)
             .putBoolean(KEY_IS_AMOLED, settings.isAmoledDark)
             .putString(KEY_ACCENT_THEME, settings.accentTheme)
             .putString(KEY_NOW_PLAYING_STYLE, settings.nowPlayingStyle)
@@ -50,6 +52,15 @@ class PreferenceManager(context: Context) {
             .putBoolean(KEY_HIFI_AUDIO, settings.hifiAudioMode)
             .putBoolean(KEY_LOCK_SCREEN_CONTROLS, settings.lockScreenControlsEnabled)
             .apply()
+    }
+
+    /** Returns the stored language mode, migrating the legacy Persian/RTL switch once. */
+    private fun loadLanguageMode(): String {
+        prefs.getString(KEY_LANGUAGE_MODE, null)?.let { return it }
+        if (prefs.contains(KEY_IS_PERSIAN)) {
+            return if (prefs.getBoolean(KEY_IS_PERSIAN, true)) AppLanguage.MODE_PERSIAN else AppLanguage.MODE_ENGLISH
+        }
+        return AppLanguage.MODE_SYSTEM
     }
 
     fun loadSortOrder(): SortOrder {

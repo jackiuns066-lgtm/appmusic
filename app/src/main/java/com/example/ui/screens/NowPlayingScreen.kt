@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
@@ -70,23 +72,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.audio.RepeatMode
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
+import com.example.data.share.TrackSharing
 import com.example.ui.components.TrackCoverImage
+import com.example.ui.components.TrackCoverImageFill
+import com.example.ui.i18n.displayAlbum
+import com.example.ui.i18n.displayArtist
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -111,10 +121,11 @@ fun NowPlayingScreen(
     onNavigateToEqualizer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val track = playbackState.currentTrack
     if (track == null) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("هیچ آهنگی در حال پخش نیست", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.now_playing_empty), style = MaterialTheme.typography.titleMedium)
         }
         return
     }
@@ -156,7 +167,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "بازگشت"
+                    contentDescription = stringResource(R.string.cd_back)
                 )
             }
 
@@ -168,7 +179,7 @@ fun NowPlayingScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "در حال پخش",
+                    text = stringResource(R.string.now_playing_subtitle),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -176,12 +187,30 @@ fun NowPlayingScreen(
 
             Row {
                 IconButton(
+                    onClick = {
+                        TrackSharing.shareTrack(
+                            context = context,
+                            track = track,
+                            chooserTitle = context.getString(R.string.share_chooser_song),
+                            subject = context.getString(R.string.share_track_subject, track.title, track.artist),
+                            text = context.getString(R.string.share_song_text, track.title, track.artist)
+                        )
+                    },
+                    modifier = Modifier.testTag("now_playing_share_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = stringResource(R.string.cd_share)
+                    )
+                }
+
+                IconButton(
                     onClick = onCycleVisualizerStyle,
                     modifier = Modifier.testTag("now_playing_style_btn")
                 ) {
                     Icon(
                         imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = "تغییر جلوه بصری",
+                        contentDescription = stringResource(R.string.cd_visual_style),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -192,7 +221,7 @@ fun NowPlayingScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Equalizer,
-                        contentDescription = "اکولایزر"
+                        contentDescription = stringResource(R.string.cd_equalizer)
                     )
                 }
             }
@@ -230,9 +259,9 @@ fun NowPlayingScreen(
         ) {
             when (visualizerStyle) {
                 "spectrum_wave" -> NeonSpectrumWaveVisualizer(isPlaying = playbackState.isPlaying, track = track)
-                "glass_3d" -> Floating3DGlassVisualizer(isPlaying = playbackState.isPlaying, title = track.title, artist = track.artist, track = track)
+                "glass_3d" -> Floating3DGlassVisualizer(isPlaying = playbackState.isPlaying, track = track)
                 "pulse_rings" -> PulsingRingsVisualizer(isPlaying = playbackState.isPlaying, track = track)
-                else -> NeonVinylVisualizer(isPlaying = playbackState.isPlaying, title = track.title, artist = track.artist, track = track)
+                else -> NeonVinylVisualizer(isPlaying = playbackState.isPlaying, track = track)
             }
         }
 
@@ -242,12 +271,15 @@ fun NowPlayingScreen(
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.clickable { onCycleVisualizerStyle() }
         ) {
-            val styleTitle = when (visualizerStyle) {
-                "spectrum_wave" -> "جلوه: اکولایزر طیف نئونی"
-                "glass_3d" -> "جلوه: کاور سه‌بعدی شیشه‌ای"
-                "pulse_rings" -> "جلوه: امواج تپنده ریتمیک"
-                else -> "جلوه: چرخش نئونی وینیل"
-            }
+            val styleName = stringResource(
+                when (visualizerStyle) {
+                    "spectrum_wave" -> R.string.style_spectrum_wave
+                    "glass_3d" -> R.string.style_glass_3d
+                    "pulse_rings" -> R.string.style_pulse_rings
+                    else -> R.string.style_neon_vinyl
+                }
+            )
+            val styleTitle = stringResource(R.string.now_playing_effect_prefix, styleName)
             Text(
                 text = styleTitle,
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
@@ -270,7 +302,7 @@ fun NowPlayingScreen(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "برای رد کردن آهنگ به چپ یا راست بکشید",
+                text = stringResource(R.string.now_playing_swipe_hint),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
             )
@@ -300,7 +332,7 @@ fun NowPlayingScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "${track.artist} • ${track.album}",
+                    text = displayArtist(track.artist) + " • " + displayAlbum(track.album),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -314,7 +346,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = if (track.isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                    contentDescription = "علاقه‌مندی",
+                    contentDescription = stringResource(R.string.cd_favorite),
                     tint = if (track.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(30.dp)
                 )
@@ -325,7 +357,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.PlaylistAdd,
-                    contentDescription = "افزودن به لیست",
+                    contentDescription = stringResource(R.string.cd_add_to_playlist),
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -385,7 +417,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Shuffle,
-                    contentDescription = "پخش تصادفی",
+                    contentDescription = stringResource(R.string.cd_shuffle),
                     tint = if (playbackState.isShuffleEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
@@ -404,7 +436,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.SkipPrevious,
-                    contentDescription = "قبلی",
+                    contentDescription = stringResource(R.string.cd_previous),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(32.dp)
                 )
@@ -431,7 +463,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = if (playbackState.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                    contentDescription = if (playbackState.isPlaying) "توقف" else "پخش",
+                    contentDescription = if (playbackState.isPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(40.dp)
                 )
@@ -450,7 +482,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.SkipNext,
-                    contentDescription = "بعدی",
+                    contentDescription = stringResource(R.string.cd_next),
                     tint = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.size(32.dp)
                 )
@@ -474,7 +506,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = repeatIcon,
-                    contentDescription = "تکرار",
+                    contentDescription = stringResource(R.string.cd_repeat),
                     tint = if (isRepeatActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
@@ -507,7 +539,7 @@ fun NowPlayingScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (playbackState.stopAfterCurrentTrack) "توقف بعد این آهنگ (فعال)" else "توقف خودکار",
+                        text = if (playbackState.stopAfterCurrentTrack) stringResource(R.string.now_playing_stop_after_active) else stringResource(R.string.now_playing_stop_after),
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -520,7 +552,7 @@ fun NowPlayingScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                    contentDescription = "صف پخش"
+                    contentDescription = stringResource(R.string.cd_queue)
                 )
             }
         }
@@ -538,7 +570,7 @@ fun NowPlayingScreen(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "صف پخش (${playbackState.currentQueue.size} آهنگ)",
+                    text = stringResource(R.string.now_playing_queue_title, playbackState.currentQueue.size),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -573,7 +605,7 @@ fun NowPlayingScreen(
                                     color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = qTrack.artist,
+                                    text = displayArtist(qTrack.artist),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -589,7 +621,7 @@ fun NowPlayingScreen(
     if (showAddToPlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showAddToPlaylistDialog = false },
-            title = { Text("افزودن به لیست پخش") },
+            title = { Text(stringResource(R.string.dialog_add_to_playlist_generic)) },
             text = {
                 Column {
                     Button(
@@ -599,13 +631,13 @@ fun NowPlayingScreen(
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("ساخت لیست جدید")
+                        Text(stringResource(R.string.action_create_new_playlist))
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     if (playlists.isEmpty()) {
-                        Text("هیچ لیست پخشی وجود ندارد")
+                        Text(stringResource(R.string.now_playing_no_playlists))
                     } else {
                         LazyColumn(modifier = Modifier.height(200.dp)) {
                             items(playlists) { pl ->
@@ -628,7 +660,7 @@ fun NowPlayingScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showAddToPlaylistDialog = false }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -638,13 +670,13 @@ fun NowPlayingScreen(
     if (showCreatePlaylistDialog) {
         AlertDialog(
             onDismissRequest = { showCreatePlaylistDialog = false },
-            title = { Text("لیست پخش جدید") },
+            title = { Text(stringResource(R.string.dialog_new_playlist_short)) },
             text = {
                 Column {
                     androidx.compose.material3.OutlinedTextField(
                         value = newPlaylistName,
                         onValueChange = { newPlaylistName = it },
-                        label = { Text("نام لیست") },
+                        label = { Text(stringResource(R.string.label_playlist_name_short)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -660,24 +692,23 @@ fun NowPlayingScreen(
                         }
                     }
                 ) {
-                    Text("ایجاد")
+                    Text(stringResource(R.string.action_create))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCreatePlaylistDialog = false }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
     }
 }
 
-// 1. Neon Vinyl Visualizer with 360-degree rotation and glowing halo
+// 1. Neon Vinyl Visualizer
+// The album art fills the whole frame, the vinyl rings / tonearm are drawn on top of it.
 @Composable
 fun NeonVinylVisualizer(
     isPlaying: Boolean,
-    title: String,
-    artist: String,
     track: TrackEntity,
     modifier: Modifier = Modifier
 ) {
@@ -703,21 +734,26 @@ fun NeonVinylVisualizer(
 
     Box(
         modifier = modifier
-            .size(280.dp),
+            .size(280.dp)
+            .shadow(18.dp, RoundedCornerShape(26.dp), spotColor = primaryColor)
+            .clip(RoundedCornerShape(26.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(270.dp)) {
-            val center = Offset(size.width / 2f, size.height / 2f)
-            val outerRadius = size.width / 2f - 14f
+        TrackCoverImageFill(
+            track = track,
+            modifier = Modifier.fillMaxSize(),
+            shapeRadius = 26.dp,
+            fallbackTint = primaryColor
+        )
 
-            // Outer Neon Glow Aura
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val outerRadius = size.width / 2f - 10f
+
+            // Vignette so the vinyl grooves stay readable above the artwork
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(
-                        primaryColor.copy(alpha = if (isPlaying) 0.45f else 0.15f),
-                        primaryColor.copy(alpha = if (isPlaying) 0.2f else 0.05f),
-                        Color.Transparent
-                    ),
+                    colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.35f)),
                     center = center,
                     radius = size.width / 2f
                 ),
@@ -725,90 +761,67 @@ fun NeonVinylVisualizer(
                 center = center
             )
 
-            // Vinyl Rotation Scope
             rotate(degrees = currentRotation, pivot = center) {
-                // Main Vinyl Body (Deep Black)
-                drawCircle(
-                    color = Color(0xFF151517),
-                    radius = outerRadius,
-                    center = center
-                )
-
-                // Vinyl Grooves (Shiny concentric rings)
-                val grooveRadii = listOf(0.9f, 0.83f, 0.76f, 0.69f, 0.62f, 0.55f, 0.48f)
-                grooveRadii.forEach { factor ->
+                listOf(0.95f, 0.86f, 0.77f, 0.68f, 0.59f, 0.5f).forEach { factor ->
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.07f),
+                        color = Color.White.copy(alpha = 0.13f),
                         radius = outerRadius * factor,
                         center = center,
-                        style = Stroke(width = 1.2f)
+                        style = Stroke(width = 1.4f)
                     )
                 }
 
-                // Inner Neon Accent Ring
+                // Rotating light reflection on the record surface
+                drawArc(
+                    color = Color.White.copy(alpha = 0.16f),
+                    startAngle = 0f,
+                    sweepAngle = 46f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - outerRadius, center.y - outerRadius),
+                    size = Size(outerRadius * 2f, outerRadius * 2f),
+                    style = Stroke(width = outerRadius * 0.22f)
+                )
+
+                // Inner neon accent ring
                 drawCircle(
-                    color = primaryColor.copy(alpha = 0.85f),
-                    radius = outerRadius * 0.40f,
+                    color = primaryColor.copy(alpha = 0.75f),
+                    radius = outerRadius * 0.42f,
                     center = center,
                     style = Stroke(width = 2.5f)
                 )
-
-                // Center Label Disc (Vibrant Gradient)
-                drawCircle(
-                    brush = Brush.linearGradient(
-                        colors = listOf(primaryColor, primaryColor.copy(alpha = 0.7f), Color(0xFF00E5FF))
-                    ),
-                    radius = outerRadius * 0.35f,
-                    center = center
-                )
-
-                // Center Spindle Hole
-                drawCircle(
-                    color = Color(0xFF101012),
-                    radius = outerRadius * 0.08f,
-                    center = center
-                )
             }
 
-            // Tonearm / Stylus (Pivot in top-right)
-            val pivotX = size.width - 20f
-            val pivotY = 24f
+            // Outer neon glow ring
+            drawCircle(
+                color = primaryColor.copy(alpha = if (isPlaying) 0.8f else 0.35f),
+                radius = outerRadius,
+                center = center,
+                style = Stroke(width = 3f)
+            )
+
+            // Tonearm / stylus (pivot in the top-right corner)
+            val pivotX = size.width - 26f
+            val pivotY = 26f
             rotate(degrees = tonearmAngle, pivot = Offset(pivotX, pivotY)) {
-                // Pivot Base
-                drawCircle(
-                    color = Color(0xFFD1D5DB),
-                    radius = 8f,
-                    center = Offset(pivotX, pivotY)
-                )
-                // Arm Line
+                drawCircle(color = Color(0xFFE5E7EB), radius = 9f, center = Offset(pivotX, pivotY))
                 drawLine(
                     color = Color(0xFF9CA3AF),
                     start = Offset(pivotX, pivotY),
-                    end = Offset(pivotX - 60f, pivotY + 110f),
-                    strokeWidth = 4f
+                    end = Offset(pivotX - 70f, pivotY + 120f),
+                    strokeWidth = 4.5f
                 )
-                // Cartridge Head
                 drawRoundRect(
                     color = primaryColor,
-                    topLeft = Offset(pivotX - 70f, pivotY + 105f),
-                    size = Size(18f, 12f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
+                    topLeft = Offset(pivotX - 80f, pivotY + 112f),
+                    size = Size(20f, 13f),
+                    cornerRadius = CornerRadius(3f, 3f)
                 )
             }
         }
-
-        // Circular album art centered inside spinning vinyl
-        TrackCoverImage(
-            track = track,
-            size = 82.dp,
-            shapeRadius = 41.dp,
-            fallbackTint = primaryColor,
-            modifier = Modifier.border(2.dp, primaryColor, CircleShape)
-        )
     }
 }
 
-// 2. Neon Spectrum Wave Visualizer
+// 2. Neon Spectrum Wave Visualizer (bars are drawn above the full frame album art)
 @Composable
 fun NeonSpectrumWaveVisualizer(
     isPlaying: Boolean,
@@ -831,15 +844,24 @@ fun NeonSpectrumWaveVisualizer(
     Box(
         modifier = modifier
             .size(280.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color(0xFF10141D)),
+            .shadow(18.dp, RoundedCornerShape(26.dp), spotColor = primaryColor)
+            .clip(RoundedCornerShape(26.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+        TrackCoverImageFill(
+            track = track,
+            modifier = Modifier.fillMaxSize(),
+            shapeRadius = 26.dp,
+            fallbackTint = primaryColor
+        )
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            drawRect(color = Color.Black.copy(alpha = 0.3f))
+
             val barCount = 18
             val barWidth = size.width / (barCount * 1.5f)
-            val maxBarHeight = size.height * 0.65f
-            val centerY = size.height / 2f
+            val maxBarHeight = size.height * 0.5f
+            val baseY = size.height - 24f
 
             for (i in 0 until barCount) {
                 val phase = i.toFloat() * 0.35f + if (isPlaying) time else 0f
@@ -848,47 +870,40 @@ fun NeonSpectrumWaveVisualizer(
                 } else 0.2f
 
                 val h = maxBarHeight * dynamicFactor
-                val x = i * (barWidth * 1.5f) + 10f
+                val x = i * (barWidth * 1.5f) + 14f
 
-                // Draw glowing bar
                 drawRoundRect(
                     brush = Brush.verticalGradient(
                         colors = listOf(
                             Color(0xFF00E5FF),
                             primaryColor,
-                            primaryColor.copy(alpha = 0.3f)
-                        )
+                            primaryColor.copy(alpha = 0.35f)
+                        ),
+                        startY = baseY - h,
+                        endY = baseY
                     ),
-                    topLeft = Offset(x, centerY - h / 2f),
+                    topLeft = Offset(x, baseY - h),
                     size = Size(barWidth, h),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2f, barWidth / 2f)
+                    cornerRadius = CornerRadius(barWidth / 2f, barWidth / 2f)
                 )
             }
 
-            // Center neon glow circle
-            drawCircle(
-                color = primaryColor.copy(alpha = 0.25f),
-                radius = 48f,
-                center = Offset(size.width / 2f, centerY)
+            // Neon frame
+            drawRoundRect(
+                color = primaryColor.copy(alpha = 0.6f),
+                topLeft = Offset(2f, 2f),
+                size = Size(size.width - 4f, size.height - 4f),
+                cornerRadius = CornerRadius(26f, 26f),
+                style = Stroke(width = 3f)
             )
         }
-
-        TrackCoverImage(
-            track = track,
-            size = 80.dp,
-            shapeRadius = 20.dp,
-            fallbackTint = primaryColor,
-            modifier = Modifier.border(2.dp, primaryColor, RoundedCornerShape(20.dp))
-        )
     }
 }
 
-// 3. Floating 3D Glass Visualizer
+// 3. Floating 3D Glass Visualizer (glass card floats up and down, album art fills the frame)
 @Composable
 fun Floating3DGlassVisualizer(
     isPlaying: Boolean,
-    title: String,
-    artist: String,
     track: TrackEntity,
     modifier: Modifier = Modifier
 ) {
@@ -911,76 +926,50 @@ fun Floating3DGlassVisualizer(
             .size(280.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .size(250.dp)
-                .padding(top = (8 + currentOffset).dp)
+                .fillMaxSize()
+                .offset(y = currentOffset.dp)
+                .shadow(20.dp, RoundedCornerShape(32.dp), spotColor = primaryColor)
                 .clip(RoundedCornerShape(32.dp))
                 .border(
                     2.dp,
                     Brush.linearGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.6f),
-                            primaryColor.copy(alpha = 0.7f),
+                            Color.White.copy(alpha = 0.65f),
+                            primaryColor.copy(alpha = 0.75f),
                             Color.Transparent
                         )
                     ),
                     RoundedCornerShape(32.dp)
-                ),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-            shadowElevation = 16.dp
+                )
         ) {
+            TrackCoverImageFill(
+                track = track,
+                modifier = Modifier.fillMaxSize(),
+                shapeRadius = 32.dp,
+                fallbackTint = primaryColor
+            )
+
+            // Glass shine above the cover
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        Brush.radialGradient(
+                        Brush.linearGradient(
                             listOf(
-                                primaryColor.copy(alpha = 0.35f),
-                                Color(0xFF1A1C24).copy(alpha = 0.8f)
+                                Color.White.copy(alpha = 0.18f),
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.1f)
                             )
                         )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    TrackCoverImage(
-                        track = track,
-                        size = 96.dp,
-                        shapeRadius = 24.dp,
-                        fallbackTint = primaryColor,
-                        modifier = Modifier.border(2.dp, primaryColor.copy(alpha = 0.8f), RoundedCornerShape(24.dp))
                     )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = artist,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.75f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
+            )
         }
     }
 }
 
-// 4. Pulsing Radial Rings Visualizer
+// 4. Pulsing Radial Rings Visualizer (rings pulse above the album art)
 @Composable
 fun PulsingRingsVisualizer(
     isPlaying: Boolean,
@@ -1003,54 +992,54 @@ fun PulsingRingsVisualizer(
 
     Box(
         modifier = modifier
-            .size(280.dp),
+            .size(280.dp)
+            .shadow(18.dp, RoundedCornerShape(26.dp), spotColor = primaryColor)
+            .clip(RoundedCornerShape(26.dp)),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(260.dp)) {
+        TrackCoverImageFill(
+            track = track,
+            modifier = Modifier.fillMaxSize(),
+            shapeRadius = 26.dp,
+            fallbackTint = primaryColor
+        )
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
 
-            // Expanding ripple wave 1
             drawCircle(
-                color = primaryColor.copy(alpha = 0.15f * (1.5f - currentPulse)),
-                radius = 110f * currentPulse,
+                color = primaryColor.copy(alpha = 0.12f),
+                radius = size.width / 2f,
+                center = center
+            )
+
+            drawCircle(
+                color = primaryColor.copy(alpha = (0.22f * (1.5f - currentPulse)).coerceAtLeast(0f)),
+                radius = (size.width * 0.44f) * currentPulse,
                 center = center,
                 style = Stroke(width = 3f)
             )
 
-            // Expanding ripple wave 2
             drawCircle(
-                color = primaryColor.copy(alpha = 0.25f * (1.4f - currentPulse)),
-                radius = 85f * currentPulse,
+                color = primaryColor.copy(alpha = (0.32f * (1.4f - currentPulse)).coerceAtLeast(0f)),
+                radius = (size.width * 0.33f) * currentPulse,
                 center = center,
                 style = Stroke(width = 3.5f)
             )
 
-            // Expanding ripple wave 3
             drawCircle(
-                color = primaryColor.copy(alpha = 0.4f),
-                radius = 60f * currentPulse,
+                color = primaryColor.copy(alpha = 0.5f),
+                radius = (size.width * 0.22f) * currentPulse,
                 center = center,
                 style = Stroke(width = 4f)
             )
 
-            // Center glowing core
             drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(primaryColor, primaryColor.copy(alpha = 0.6f)),
-                    center = center
-                ),
-                radius = 45f,
+                color = primaryColor.copy(alpha = 0.3f),
+                radius = 26f,
                 center = center
             )
         }
-
-        TrackCoverImage(
-            track = track,
-            size = 80.dp,
-            shapeRadius = 40.dp,
-            fallbackTint = primaryColor,
-            modifier = Modifier.border(2.dp, primaryColor, CircleShape)
-        )
     }
 }
 

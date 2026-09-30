@@ -47,11 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.local.EqualizerPresetEntity
+import com.example.ui.i18n.presetDisplayName
 
 @Composable
 fun EqualizerScreen(
@@ -102,12 +105,12 @@ fun EqualizerScreen(
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "اکولایزر صوتی و تقویت‌کننده",
+                        text = stringResource(R.string.eq_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (isEnabled) "افکت‌ها فعال هستند" else "افکت‌ها غیرفعال هستند",
+                        text = if (isEnabled) stringResource(R.string.eq_effects_enabled) else stringResource(R.string.eq_effects_disabled),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -124,7 +127,7 @@ fun EqualizerScreen(
 
         // Presets Chips
         Text(
-            text = "پریست‌های آماده",
+            text = stringResource(R.string.eq_presets),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -147,7 +150,7 @@ fun EqualizerScreen(
                         bassBoostVal = preset.bassBoostLevel
                         virtualizerVal = preset.virtualizerLevel
                     },
-                    label = { Text(preset.name) },
+                    label = { Text(presetDisplayName(preset)) },
                     modifier = Modifier.testTag("preset_chip_${preset.id}")
                 )
             }
@@ -157,7 +160,7 @@ fun EqualizerScreen(
 
         // 5-Band Equalizer Sliders
         Text(
-            text = "فرکانس‌های صدا (۵ باند)",
+            text = stringResource(R.string.eq_bands),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -206,7 +209,7 @@ fun EqualizerScreen(
 
         // Bass Boost & Virtualizer
         Text(
-            text = "تقویت بیس و صدای فراگیر (۳ بعدی)",
+            text = stringResource(R.string.eq_bass_section),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -226,7 +229,7 @@ fun EqualizerScreen(
                     Icon(imageVector = Icons.Default.Equalizer, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "تقویت بیس (Bass Boost): ${bassBoostVal / 10}٪",
+                        text = stringResource(R.string.eq_bass_value, bassBoostVal / 10),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
@@ -252,7 +255,7 @@ fun EqualizerScreen(
                     Icon(imageVector = Icons.Default.SurroundSound, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "صدای فراگیر (Virtualizer): ${virtualizerVal / 10}٪",
+                        text = stringResource(R.string.eq_virtualizer_value, virtualizerVal / 10),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
@@ -274,7 +277,7 @@ fun EqualizerScreen(
 
         // Playback Speed
         Text(
-            text = "سرعت پخش صدا",
+            text = stringResource(R.string.eq_speed_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -292,7 +295,7 @@ fun EqualizerScreen(
                     Icon(imageVector = Icons.Default.Speed, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "سرعت پخش: ${String.format("%.2f", speedVal)}x",
+                        text = stringResource(R.string.eq_speed_value, String.format("%.2f", speedVal)),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
@@ -318,7 +321,7 @@ fun EqualizerScreen(
         ) {
             Icon(imageVector = Icons.Default.Save, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("ذخیره به عنوان پریست اختصاصی")
+            Text(stringResource(R.string.eq_save_custom))
         }
     }
 
@@ -326,12 +329,12 @@ fun EqualizerScreen(
         var presetName by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showSaveDialog = false },
-            title = { Text("ذخیره پریست شخصی") },
+            title = { Text(stringResource(R.string.eq_dialog_save_title)) },
             text = {
                 OutlinedTextField(
                     value = presetName,
                     onValueChange = { presetName = it },
-                    label = { Text("نام پریست") },
+                    label = { Text(stringResource(R.string.eq_preset_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -351,12 +354,12 @@ fun EqualizerScreen(
                     },
                     enabled = presetName.isNotBlank()
                 ) {
-                    Text("ذخیره")
+                    Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSaveDialog = false }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )

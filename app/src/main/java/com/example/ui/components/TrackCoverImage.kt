@@ -29,12 +29,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.local.TrackEntity
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
 
 object AudioCoverLoader {
     private val memoryCache = object : LruCache<String, Bitmap>(50 * 1024 * 1024) {
@@ -175,7 +177,7 @@ fun TrackCoverImage(
         if (bmp != null) {
             Image(
                 bitmap = bmp.asImageBitmap(),
-                contentDescription = "کاور آهنگ ${track.title}",
+                contentDescription = stringResource(R.string.cd_track_cover, track.title),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -185,6 +187,49 @@ fun TrackCoverImage(
                 contentDescription = null,
                 tint = fallbackTint,
                 modifier = Modifier.size(size * 0.55f)
+            )
+        }
+    }
+}
+
+/**
+ * Album art variant that fills the size given by [modifier] (used by the now playing screen where
+ * the artwork covers the whole visualizer frame).
+ */
+@Composable
+fun TrackCoverImageFill(
+    track: TrackEntity,
+    modifier: Modifier = Modifier,
+    shapeRadius: Dp = 24.dp,
+    fallbackTint: Color = MaterialTheme.colorScheme.primary
+) {
+    val context = LocalContext.current
+    var bitmap by remember(track.id, track.uriString, track.downloadedFilePath) { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(track.id, track.uriString, track.downloadedFilePath) {
+        bitmap = AudioCoverLoader.loadArtwork(context, track)
+    }
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(shapeRadius))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentAlignment = Alignment.Center
+    ) {
+        val bmp = bitmap
+        if (bmp != null) {
+            Image(
+                bitmap = bmp.asImageBitmap(),
+                contentDescription = stringResource(R.string.cd_track_cover, track.title),
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.MusicNote,
+                contentDescription = null,
+                tint = fallbackTint,
+                modifier = Modifier.fillMaxSize(0.3f)
             )
         }
     }

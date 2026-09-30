@@ -1,57 +1,91 @@
 {
-  "inventory": [
-    {
-      "capability": "پخش فایل‌های صوتی محلی دستگاه (MP3, FLAC, WAV, M4A, OGG, AAC)",
-      "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:playTrack"
-    },
-    {
-      "capability": "اکولایزر گرافیکی ۵ کاناله سخت‌افزاری همراه با Bass Boost و Virtualizer سه‌بعدی",
-      "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:setupAudioEffectsSafe"
-    },
-    {
-      "capability": "کنترل‌های پخش زنده روی صفحه قفل و پنل کرکره‌ای اعلان با دکمه‌های قبلی، پخش/توقف و بعدی",
-      "evidence": "app/src/main/java/com/example/data/audio/MediaNotificationManager.kt:updateNotification"
-    },
-    {
-      "capability": "درخواست خودکار مجوز نوتیفیکیشن در اندروید ۱۳ و بالاتر برای نمایش اعلان مدیا",
-      "evidence": "app/src/main/java/com/example/MainActivity.kt:checkAndRequestPermissions"
-    },
-    {
-      "capability": "دسته‌بندی خودکار آهنگ‌ها بر اساس پوشه‌ها، خوانندگان، آلبوم‌ها و سبک‌ها",
-      "evidence": "app/src/main/java/com/example/data/repository/MusicRepository.kt:allFolders"
-    },
-    {
-      "capability": "ایجاد، ویرایش و مدیریت لیست‌های پخش دلخواه بدون محدودیت با پایگاه داده پایدار Room",
-      "evidence": "app/src/main/java/com/example/data/local/PlaylistDao.kt"
-    },
-    {
-      "capability": "سیستم پیشنهاد هوشمند آفلاین آهنگ‌ها بر اساس رفتار شنیداری و هنرمندان محبوب",
-      "evidence": "app/src/main/java/com/example/data/recommendation/RecommendationEngine.kt"
-    },
-    {
-      "capability": "تایمر خواب با زمان‌بندی انتخابی برای توقف خودکار موزیک در پایان زمان تعیین‌شده",
-      "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:startSleepTimer"
-    },
-    {
-      "capability": "توقف خودکار هنگام جدا شدن هدفون/هندزفری یا قطع بلوتوث",
-      "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:setupHeadsetReceiver"
-    },
-    {
-      "capability": "مدیریت فوکوس صوتی (Audio Focus) برای توقف آنی هنگام تماس یا پخش صدای برنامه‌های دیگر",
-      "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:requestAudioFocus"
-    },
-    {
-      "capability": "پوسته تمام مشکی AMOLED همراه با ۵ تم رنگی نئونی (طلایی، بنفش، زمردی، فیروزه‌ای، یاقوتی)",
-      "evidence": "app/src/main/java/com/example/ui/theme/Theme.kt:AvaMusicTheme"
-    },
-    {
-      "capability": "اطلاعات طراح و سازنده تیم نوین وب همراه با لینک رسمی webnovo.ir و اشتراک‌گذاری",
-      "evidence": "app/src/main/java/com/example/ui/screens/SettingsScreen.kt"
-    }
-  ],
-  "listing": {
-    "title": "Novo Music Player",
-    "short_description": "موزیک پلیر مدرن، آفلاین و حرفه‌ای Novo با اکولایزر ۵ بانده و کنترل صفحه قفل",
-    "full_description": "Novo Music Player یک موزیک پلیر مدرن، سبک، کاملاً آفلاین و سریع برای دوست‌داران موسیقی است که توسط تیم «نوین وب» (webnovo.ir) طراحی و توسعه یافته است.\n\nبا Novo می‌توانید به راحتی تمام آهنگ‌های حافظه گوشی خود را با بالاترین کیفیت ممکن پخش کنید و از قابلیت‌های شخصی‌سازی پیشرفته لذت ببرید.\n\nویژگی‌ها و امکانات کلیدی برنامه Novo:\n• پخش‌کننده صوتی قدرتمند و آفلاین: پشتیبانی از تمامی فرمت‌های صوتی رایج شامل MP3، FLAC، WAV، M4A، OGG و AAC.\n• کنترل‌های روی صفحه قفل و نوار کرکره‌ای اعلان: دکمه‌های میانبر پخش، توقف، آهنگ بعدی و قبلی بدون نیاز به باز کردن قفل گوشی.\n• اکولایزر ۵ کاناله گرافیکی: تنظیم دقیق فرکانس‌های بم و زیر همراه با تقویت بیس (Bass Boost)، شبیه‌ساز صدای فراگیر ۳بعدی (Virtualizer) و پریست‌های سبک‌های راک، پاپ، جز، کلاسیک و متال.\n• جلوه‌های متحرک و بصری صفحه پخش: امکان انتخاب بین ۴ تم و جلوه نمایشی شگفت‌انگیز (وینیل نئونی دوّار، اکولایزر امواج طیفی، کاور سه‌بعدی شیشه‌ای، و حلقه‌های تپنده ریتمیک).\n• سوایپ و کنترل لمسی سریع: رد کردن آهنگ‌ها به آسانی با کشیدن دست به چپ و راست روی صفحه پخش.\n• دسته‌بندی پیشرفته و کاوشگر پوشه‌ای: مشاهده فایل‌های صوتی تفکیک شده بر اساس پوشه‌ها، نام خوانندگان، آلبوم‌ها و سبک‌های موسیقی.\n• سیستم پیشنهادات هوشمند آفلاین: تحلیل سلیقه شنیداری کاربر و پیشنهاد جذاب‌ترین آهنگ‌های موجود در دستگاه بدون ارسال داده یا نیاز به اینترنت.\n• تایمر خواب خودکار (Sleep Timer): تنظیم زمان‌بندی توقف پخش برای زمان خواب و استراحت.\n• توقف هوشمند با قطع هندزفری و تماس تلفنی: با مدیریت کامل Audio Focus و حسگر اتصال هدفون یا بلوتوث.\n• پوسته تاریک ویژه اولد (AMOLED Black): مصرف بهینه باتری در نمایشگرهای OLED و Super AMOLED به همراه ۵ تم رنگی نئونی دلخواه.\n• بدون تبلیغات مزاحم: تجربه‌ای روان، آرام و بدون هرگونه وقفه.\n\nطراحی و توسعه: تیم نوین وب (webnovo.ir)\nپشتیبانی و وب‌سایت رسمی: https://webnovo.ir"
+ "inventory": [
+  {
+   "capability": "پخش فایل‌های صوتی محلی دستگاه (MP3, FLAC, WAV, M4A, OGG, AAC)",
+   "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:playTrack"
+  },
+  {
+   "capability": "اکولایزر گرافیکی ۵ کاناله سخت‌افزاری همراه با Bass Boost و Virtualizer سه‌بعدی",
+   "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:setupAudioEffectsSafe"
+  },
+  {
+   "capability": "کنترل‌های پخش زنده روی صفحه قفل و پنل کرکره‌ای اعلان با دکمه‌های قبلی، پخش/توقف و بعدی",
+   "evidence": "app/src/main/java/com/example/data/audio/MediaNotificationManager.kt:updateNotification"
+  },
+  {
+   "capability": "درخواست خودکار مجوز نوتیفیکیشن در اندروید ۱۳ و بالاتر برای نمایش اعلان مدیا",
+   "evidence": "app/src/main/java/com/example/MainActivity.kt:checkAndRequestPermissions"
+  },
+  {
+   "capability": "دسته‌بندی خودکار آهنگ‌ها بر اساس پوشه‌ها، خوانندگان، آلبوم‌ها و سبک‌ها",
+   "evidence": "app/src/main/java/com/example/data/repository/MusicRepository.kt:allFolders"
+  },
+  {
+   "capability": "ایجاد، ویرایش و مدیریت لیست‌های پخش دلخواه بدون محدودیت با پایگاه داده پایدار Room",
+   "evidence": "app/src/main/java/com/example/data/local/PlaylistDao.kt"
+  },
+  {
+   "capability": "سیستم پیشنهاد هوشمند آفلاین آهنگ‌ها بر اساس رفتار شنیداری و هنرمندان محبوب",
+   "evidence": "app/src/main/java/com/example/data/recommendation/RecommendationEngine.kt"
+  },
+  {
+   "capability": "تایمر خواب با زمان‌بندی انتخابی برای توقف خودکار موزیک در پایان زمان تعیین‌شده",
+   "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:startSleepTimer"
+  },
+  {
+   "capability": "توقف خودکار هنگام جدا شدن هدفون/هندزفری یا قطع بلوتوث",
+   "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:setupHeadsetReceiver"
+  },
+  {
+   "capability": "مدیریت فوکوس صوتی (Audio Focus) برای توقف آنی هنگام تماس یا پخش صدای برنامه‌های دیگر",
+   "evidence": "app/src/main/java/com/example/data/audio/AudioPlayerEngine.kt:requestAudioFocus"
+  },
+  {
+   "capability": "پوسته تمام مشکی AMOLED همراه با ۵ تم رنگی نئونی (طلایی، بنفش، زمردی، فیروزه‌ای، یاقوتی)",
+   "evidence": "app/src/main/java/com/example/ui/theme/Theme.kt:AvaMusicTheme"
+  },
+  {
+   "capability": "اطلاعات طراح و سازنده تیم نوین وب همراه با لینک رسمی webnovo.ir و اشتراک‌گذاری",
+   "evidence": "app/src/main/java/com/example/ui/screens/SettingsScreen.kt"
+  },
+  {
+   "capability": "ویجت زیبای صفحه اصلی (Home Screen Widget) با کاور آهنگ، عنوان، هنرمند، نوار پیشرفت و دکمه‌های آیکنی قبلی / پخش-توقف / بعدی",
+   "evidence": "app/src/main/java/com/example/widget/NovoWidgetProvider.kt"
+  },
+  {
+   "capability": "اشتراک‌گذاری آهنگ (ارسال فایل صوتی یا متن آهنگ به هر برنامه‌ای از طریق منوی اشتراک‌گذاری اندروید)",
+   "evidence": "app/src/main/java/com/example/data/share/TrackSharing.kt"
+  },
+  {
+   "capability": "رابط کاربری دوزبانه (فارسی/انگلیسی) با تشخیص خودکار زبان گوشی و امکان انتخاب دستی زبان از تنظیمات + پشتیبانی کامل RTL",
+   "evidence": "app/src/main/java/com/example/ui/i18n/AppLanguage.kt"
+  },
+  {
+   "capability": "تایم‌لاین لمسی (کشیدن/ضربه) برای جابه‌جایی سریع در زمان آهنگ در نوار پخش‌کنندهٔ کوچک و صفحهٔ پخش",
+   "evidence": "app/src/main/java/com/example/ui/components/MiniPlayer.kt"
   }
+ ],
+ "listing": {
+  "title": "Novo Music Player",
+  "short_description": "موزیک پلیر مدرن، آفلاین و حرفه‌ای Novo با اکولایزر ۵ بانده، ویجت صفحه اصلی و کنترل صفحه قفل",
+  "full_description": "Novo Music Player یک موزیک پلیر مدرن، سبک، کاملاً آفلاین و سریع برای دوست‌داران موسیقی است که توسط تیم «نوین وب» (webnovo.ir) طراحی و توسعه یافته است.\n\nبا Novo می‌توانید به راحتی تمام آهنگ‌های حافظه گوشی خود را با بالاترین کیفیت ممکن پخش کنید و از قابلیت‌های شخصی‌سازی پیشرفته لذت ببرید.\n\nویژگی‌ها و امکانات کلیدی برنامه Novo:\n• پخش‌کننده صوتی قدرتمند و آفلاین: پشتیبانی از تمامی فرمت‌های صوتی رایج شامل MP3، FLAC، WAV، M4A، OGG و AAC.\n• کنترل‌های روی صفحه قفل و نوار کرکره‌ای اعلان: دکمه‌های میانبر پخش، توقف، آهنگ بعدی و قبلی بدون نیاز به باز کردن قفل گوشی.\n• اکولایزر ۵ کاناله گرافیکی: تنظیم دقیق فرکانس‌های بم و زیر همراه با تقویت بیس (Bass Boost)، شبیه‌ساز صدای فراگیر ۳بعدی (Virtualizer) و پریست‌های سبک‌های راک، پاپ، جز، کلاسیک و متال.\n• جلوه‌های متحرک و بصری صفحه پخش: امکان انتخاب بین ۴ تم و جلوه نمایشی شگفت‌انگیز (وینیل نئونی دوّار، اکولایزر امواج طیفی، کاور سه‌بعدی شیشه‌ای، و حلقه‌های تپنده ریتمیک).\n• سوایپ و کنترل لمسی سریع: رد کردن آهنگ‌ها به آسانی با کشیدن دست به چپ و راست روی صفحه پخش.\n• دسته‌بندی پیشرفته و کاوشگر پوشه‌ای: مشاهده فایل‌های صوتی تفکیک شده بر اساس پوشه‌ها، نام خوانندگان، آلبوم‌ها و سبک‌های موسیقی.\n• سیستم پیشنهادات هوشمند آفلاین: تحلیل سلیقه شنیداری کاربر و پیشنهاد جذاب‌ترین آهنگ‌های موجود در دستگاه بدون ارسال داده یا نیاز به اینترنت.\n• تایمر خواب خودکار (Sleep Timer): تنظیم زمان‌بندی توقف پخش برای زمان خواب و استراحت.\n• توقف هوشمند با قطع هندزفری و تماس تلفنی: با مدیریت کامل Audio Focus و حسگر اتصال هدفون یا بلوتوث.\n• پوسته تاریک ویژه اولد (AMOLED Black): مصرف بهینه باتری در نمایشگرهای OLED و Super AMOLED به همراه ۵ تم رنگی نئونی دلخواه.\n• بدون تبلیغات مزاحم: تجربه‌ای روان، آرام و بدون هرگونه وقفه.\n• ویجت صفحه اصلی: کنترل کامل پخش (قبلی، پخش/توقف، بعدی) همراه با کاور آهنگ و نوار پیشرفت، بدون باز کردن برنامه.\n• اشتراک‌گذاری آهنگ: ارسال فایل صوتی یا متن آهنگ به دوستان از طریق هر برنامه‌ای.\n• پشتیبانی از دو زبان فارسی و انگلیسی: تشخیص خودکار زبان گوشی و امکان تغییر زبان از داخل تنظیمات.\n\nطراحی و توسعه: تیم نوین وب (webnovo.ir)\nپشتیبانی و وب‌سایت رسمی: https://webnovo.ir"
+ },
+ "listing_en": {
+  "title": "Novo Music Player",
+  "short_description": "Modern, fast, fully offline music player with a 5-band equalizer, home screen widget and lock screen controls.",
+  "full_description": "Novo Music Player is a modern, lightweight and completely offline music player with advanced customization, designed and developed by the Novin Web team (webnovo.ir).\n\nKey features:\n• Powerful offline playback: MP3, FLAC, WAV, M4A, OGG and AAC are all supported.\n• Lock screen & notification controls: play, pause, next and previous straight from the shade.\n• Home screen widget: album art, song title, artist, a live progress bar and previous / play-pause / next buttons.\n• 5-band graphic equalizer with Bass Boost and 3D Virtualizer presets.\n• Four animated now playing styles: rotating neon vinyl, neon spectrum waves, floating 3D glass and pulsing rings.\n• Album art fills the whole now playing frame, with the visual effects layered on top.\n• Drag the timeline in the mini player or the now playing screen to jump anywhere in a song.\n• Share a song – audio file or track info – with any app.\n• Smart offline recommendations based on your listening habits, with no data sent anywhere.\n• Browse your library by folders, artists, albums and genres.\n• Sleep timer, headset unplug auto pause and full audio focus handling.\n• AMOLED black theme plus five neon accent colors.\n• Bilingual interface: Persian and English, following your device language automatically.\n• No ads and no internet connection required.\n\nDeveloped by the Novin Web team — https://webnovo.ir"
+ },
+ "release_info": {
+  "application_id": "com.aistudio.avamusic.player",
+  "version_name": "1.1.0",
+  "version_code": 2,
+  "min_sdk": 24,
+  "target_sdk": 36,
+  "compile_sdk": 36,
+  "locales": [
+   "en",
+   "fa"
+  ],
+  "play_target_api_requirement": "از ۳۱ آگوست ۲۰۲۶ گوگل‌پلی برای اپ‌ها و آپدیت‌های جدید حداقل targetSdk = 36 (اندروید ۱۶) را الزامی کرده است؛ اپ‌های قدیمی‌تر باید حداقل API 35 داشته باشند تا برای کاربران جدید روی دستگاه‌های جدید قابل نصب بمانند."
+ }
 }

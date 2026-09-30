@@ -41,15 +41,30 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
+import com.example.ui.i18n.displayAlbum
+import com.example.ui.i18n.displayArtist
+import com.example.ui.i18n.displayFolder
+import com.example.ui.i18n.displayGenre
 
 enum class CategoryType {
     FOLDERS, ARTISTS, ALBUMS, GENRES
+}
+
+@Composable
+private fun localizedGroupName(type: CategoryType, value: String): String = when (type) {
+    CategoryType.FOLDERS -> displayFolder(value)
+    CategoryType.ARTISTS -> displayArtist(value)
+    CategoryType.ALBUMS -> displayAlbum(value)
+    CategoryType.GENRES -> displayGenre(value)
 }
 
 @Composable
@@ -72,10 +87,10 @@ fun FoldersScreen(
     var trackForPlaylist by remember { mutableStateOf<TrackEntity?>(null) }
 
     val categoryTabs = listOf(
-        Triple(CategoryType.FOLDERS, "پوشه‌ها", Icons.Default.Folder),
-        Triple(CategoryType.ARTISTS, "هنرمندان", Icons.Default.Person),
-        Triple(CategoryType.ALBUMS, "آلبوم‌ها", Icons.Default.Album),
-        Triple(CategoryType.GENRES, "سبک‌ها", Icons.Default.Category)
+        Triple(CategoryType.FOLDERS, stringResource(R.string.categories_folders), Icons.Default.Folder),
+        Triple(CategoryType.ARTISTS, stringResource(R.string.categories_artists), Icons.Default.Person),
+        Triple(CategoryType.ALBUMS, stringResource(R.string.categories_albums), Icons.Default.Album),
+        Triple(CategoryType.GENRES, stringResource(R.string.categories_genres), Icons.Default.Category)
     )
 
     if (selectedGroupValue != null) {
@@ -100,19 +115,19 @@ fun FoldersScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { selectedGroupValue = null }) {
-                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "بازگشت")
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = selectedGroupValue ?: "",
+                        text = selectedGroupValue?.let { localizedGroupName(selectedCategoryType, it) } ?: "",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${groupTracks.size} قطعه صوتی",
+                        text = pluralStringResource(R.plurals.audio_items_count, groupTracks.size, groupTracks.size),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -128,7 +143,7 @@ fun FoldersScreen(
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("پخش تمام آهنگ‌های این دسته‌بندی")
+                    Text(stringResource(R.string.action_play_all_category))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -194,7 +209,7 @@ fun FoldersScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "موردی در این دسته‌بندی یافت نشد",
+                        text = stringResource(R.string.categories_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -243,14 +258,14 @@ fun FoldersScreen(
                                 Spacer(modifier = Modifier.width(16.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = itemValue,
+                                        text = localizedGroupName(selectedCategoryType, itemValue),
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = "$count آهنگ",
+                                        text = pluralStringResource(R.plurals.tracks_count, count, count),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

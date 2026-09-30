@@ -11,6 +11,8 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.local.TrackEntity
 import com.example.ui.components.AudioCoverLoader
+import com.example.ui.i18n.displayAlbumName
+import com.example.ui.i18n.displayArtistName
 
 class MediaNotificationManager(private val context: Context) {
 
@@ -26,17 +28,17 @@ class MediaNotificationManager(private val context: Context) {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     init {
-        createNotificationChannel()
+        createNotificationChannel(context)
     }
 
-    private fun createNotificationChannel() {
+    private fun createNotificationChannel(stringContext: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "پخش موسیقی و صفحه قفل",
+                stringContext.getString(R.string.notif_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "نمایش کنترل‌های پخش موسیقی روی صفحه قفل و پنل اعلان"
+                description = stringContext.getString(R.string.notif_channel_desc)
                 setShowBadge(false)
                 lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
             }
@@ -44,11 +46,18 @@ class MediaNotificationManager(private val context: Context) {
         }
     }
 
-    fun updateNotification(track: TrackEntity?, isPlaying: Boolean, isEnabled: Boolean) {
+    fun updateNotification(
+        track: TrackEntity?,
+        isPlaying: Boolean,
+        isEnabled: Boolean,
+        stringContext: Context = context
+    ) {
         if (!isEnabled || track == null) {
             dismissNotification()
             return
         }
+
+        createNotificationChannel(stringContext)
 
         val openAppIntent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -88,22 +97,24 @@ class MediaNotificationManager(private val context: Context) {
         )
 
         val playPauseIcon = if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow
-        val playPauseTitle = if (isPlaying) "توقف" else "پخش"
+        val playPauseTitle = stringContext.getString(if (isPlaying) R.string.notif_action_pause else R.string.notif_action_play)
 
         val artworkBitmap = AudioCoverLoader.loadArtworkSync(context, track)
+        val artistLabel = displayArtistName(stringContext, track.artist)
+        val albumLabel = displayAlbumName(stringContext, track.album)
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_music)
             .setContentTitle(track.title)
-            .setContentText("${track.artist} • ${track.album}")
+            .setContentText("$artistLabel • $albumLabel")
             .setContentIntent(openAppPendingIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Displays on Lock Screen
             .setOngoing(isPlaying)
             .setShowWhen(false)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .addAction(R.drawable.ic_skip_previous, "قبلی", prevPendingIntent)
+            .addAction(R.drawable.ic_skip_previous, stringContext.getString(R.string.notif_action_previous), prevPendingIntent)
             .addAction(playPauseIcon, playPauseTitle, playPausePendingIntent)
-            .addAction(R.drawable.ic_skip_next, "بعدی", nextPendingIntent)
+            .addAction(R.drawable.ic_skip_next, stringContext.getString(R.string.notif_action_next), nextPendingIntent)
 
         if (artworkBitmap != null) {
             builder.setLargeIcon(artworkBitmap)
