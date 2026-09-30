@@ -245,6 +245,7 @@ webnovo.ir</string>
     <string name="widget_label">Novo player widget</string>
     <string name="widget_description">Control playback from your home screen</string>
     <string name="widget_no_track">Nothing is playing</string>
+    <string name="widget_open_app">Tap to open Novo</string>
     <plurals name="tracks_count">
         <item quantity="one">%1$d song</item>
         <item quantity="other">%1$d songs</item>

@@ -172,6 +172,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         playerEngine.onSkipPreviousRequested = {
             playPreviousTrack()
         }
+        playerEngine.onToggleFavoriteRequested = {
+            playbackState.value.currentTrack?.let { toggleFavorite(it) }
+        }
         playerEngine.onStopAfterTrackTriggeredCallback = {
             showToast(R.string.toast_stop_after_triggered)
         }
@@ -204,9 +207,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     val signature = listOf(
                         state.currentTrack?.id ?: "",
+                        state.currentTrack?.isFavorite ?: false,
                         state.isPlaying,
                         positionBucket,
                         state.durationMs,
+                        state.isShuffleEnabled,
+                        state.repeatMode.ordinal,
+                        state.currentQueue.size,
                         setts.languageMode,
                         setts.accentTheme
                     ).joinToString("|")
@@ -220,7 +227,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             positionMs = state.currentPositionMs,
                             durationMs = state.durationMs,
                             languageMode = setts.languageMode,
-                            accentTheme = setts.accentTheme
+                            accentTheme = setts.accentTheme,
+                            isShuffleEnabled = state.isShuffleEnabled,
+                            repeatMode = state.repeatMode.ordinal,
+                            queueSize = state.currentQueue.size
                         )
                         NovoWidgetProvider.refreshAll(context)
                     }

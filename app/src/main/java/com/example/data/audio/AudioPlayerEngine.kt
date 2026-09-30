@@ -133,6 +133,9 @@ class AudioPlayerEngine(private val context: Context) {
     var onSkipNextRequested: (() -> Unit)? = null
     var onSkipPreviousRequested: (() -> Unit)? = null
 
+    /** Set by the view model so the widget can toggle the favourite flag of the current track. */
+    var onToggleFavoriteRequested: (() -> Unit)? = null
+
     init {
         initMediaPlayer()
     }

@@ -245,6 +245,7 @@ webnovo.ir</string>
     <string name="widget_label">ویجت پلیر Novo</string>
     <string name="widget_description">کنترل پخش موسیقی از صفحه اصلی</string>
     <string name="widget_no_track">چیزی در حال پخش نیست</string>
+    <string name="widget_open_app">برای باز کردن Novo ضربه بزنید</string>
     <plurals name="tracks_count">
         <item quantity="other">%1$d آهنگ</item>
     </plurals>

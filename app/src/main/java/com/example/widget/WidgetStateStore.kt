@@ -9,6 +9,10 @@ data class WidgetSnapshot(
     val title: String = "",
     val artist: String = "",
     val isPlaying: Boolean = false,
+    val isFavorite: Boolean = false,
+    val isShuffleEnabled: Boolean = false,
+    val repeatMode: Int = 0,          // 0 = off, 1 = all, 2 = one (RepeatMode ordinal)
+    val queueSize: Int = 0,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val trackId: String = "",
@@ -29,6 +33,10 @@ object WidgetStateStore {
     private const val KEY_TITLE = "title"
     private const val KEY_ARTIST = "artist"
     private const val KEY_IS_PLAYING = "is_playing"
+    private const val KEY_IS_FAVORITE = "is_favorite"
+    private const val KEY_IS_SHUFFLE = "is_shuffle"
+    private const val KEY_REPEAT_MODE = "repeat_mode"
+    private const val KEY_QUEUE_SIZE = "queue_size"
     private const val KEY_POSITION = "position"
     private const val KEY_DURATION = "duration"
     private const val KEY_TRACK_ID = "track_id"
@@ -44,7 +52,10 @@ object WidgetStateStore {
         positionMs: Long,
         durationMs: Long,
         languageMode: String,
-        accentTheme: String
+        accentTheme: String,
+        isShuffleEnabled: Boolean = false,
+        repeatMode: Int = 0,
+        queueSize: Int = 0
     ) {
         try {
             context.applicationContext
@@ -54,6 +65,10 @@ object WidgetStateStore {
                 .putString(KEY_TITLE, track?.title ?: "")
                 .putString(KEY_ARTIST, track?.artist ?: "")
                 .putBoolean(KEY_IS_PLAYING, isPlaying)
+                .putBoolean(KEY_IS_FAVORITE, track?.isFavorite ?: false)
+                .putBoolean(KEY_IS_SHUFFLE, isShuffleEnabled)
+                .putInt(KEY_REPEAT_MODE, repeatMode)
+                .putInt(KEY_QUEUE_SIZE, queueSize)
                 .putLong(KEY_POSITION, positionMs)
                 .putLong(KEY_DURATION, durationMs)
                 .putString(KEY_TRACK_ID, track?.id ?: "")
@@ -74,6 +89,10 @@ object WidgetStateStore {
                 title = prefs.getString(KEY_TITLE, "").orEmpty(),
                 artist = prefs.getString(KEY_ARTIST, "").orEmpty(),
                 isPlaying = prefs.getBoolean(KEY_IS_PLAYING, false),
+                isFavorite = prefs.getBoolean(KEY_IS_FAVORITE, false),
+                isShuffleEnabled = prefs.getBoolean(KEY_IS_SHUFFLE, false),
+                repeatMode = prefs.getInt(KEY_REPEAT_MODE, 0),
+                queueSize = prefs.getInt(KEY_QUEUE_SIZE, 0),
                 positionMs = prefs.getLong(KEY_POSITION, 0L),
                 durationMs = prefs.getLong(KEY_DURATION, 0L),
                 trackId = prefs.getString(KEY_TRACK_ID, "").orEmpty(),
@@ -96,7 +115,8 @@ object WidgetStateStore {
             title = snapshot.title,
             artist = snapshot.artist,
             uriString = snapshot.sourceUri.ifBlank { snapshot.sourcePath.orEmpty() },
-            downloadedFilePath = snapshot.sourcePath
+            downloadedFilePath = snapshot.sourcePath,
+            isFavorite = snapshot.isFavorite
         )
     }
 }

@@ -41,6 +41,9 @@ class MediaNotificationManager(private val context: Context) {
         const val ACTION_PLAY = "com.example.ACTION_PLAY"
         const val ACTION_PAUSE = "com.example.ACTION_PAUSE"
         const val ACTION_SEEK = "com.example.ACTION_SEEK"
+        const val ACTION_TOGGLE_SHUFFLE = "com.example.ACTION_TOGGLE_SHUFFLE"
+        const val ACTION_TOGGLE_REPEAT = "com.example.ACTION_TOGGLE_REPEAT"
+        const val ACTION_TOGGLE_FAVORITE = "com.example.ACTION_TOGGLE_FAVORITE"
 
         const val EXTRA_SEEK_POSITION = "com.example.extra.SEEK_POSITION"
 

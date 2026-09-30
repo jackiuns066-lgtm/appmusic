@@ -25,6 +25,15 @@ class MediaControlReceiver : BroadcastReceiver() {
                 val position = intent.getLongExtra(MediaNotificationManager.EXTRA_SEEK_POSITION, 0L)
                 playerEngine.seekTo(position.coerceAtLeast(0L))
             }
+            MediaNotificationManager.ACTION_TOGGLE_SHUFFLE -> {
+                playerEngine.toggleShuffle()
+            }
+            MediaNotificationManager.ACTION_TOGGLE_REPEAT -> {
+                playerEngine.toggleRepeatMode()
+            }
+            MediaNotificationManager.ACTION_TOGGLE_FAVORITE -> {
+                playerEngine.onToggleFavoriteRequested?.invoke()
+            }
             MediaNotificationManager.ACTION_NEXT -> {
                 val skipNext = playerEngine.onSkipNextRequested ?: playerEngine.onTrackCompletedCallback
                 skipNext?.invoke()
