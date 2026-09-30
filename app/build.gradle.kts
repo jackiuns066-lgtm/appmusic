@@ -5,6 +5,12 @@ plugins {
   alias(libs.plugins.secrets)
 }
 
+// Every CI build gets a higher versionCode, so the APK is always a genuine *update* that installs
+// straight over the version already on the phone (same package id + same signing key + newer code).
+// 1.1.0 -> 10100, then the GitHub run number is added (base + run).
+val baseVersionCode = 10100
+val ciRunNumber = providers.environmentVariable("GITHUB_RUN_NUMBER").orNull?.toIntOrNull() ?: 0
+
 android {
   namespace = "com.example"
   compileSdk = 36
@@ -13,7 +19,7 @@ android {
     applicationId = "com.aistudio.avamusic.player"
     minSdk = 24
     targetSdk = 36
-    versionCode = 2
+    versionCode = baseVersionCode + ciRunNumber
     versionName = "1.1.0"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -70,7 +76,7 @@ android {
     create("canary") {
       initWith(getByName("release"))
       applicationIdSuffix = ".canary"
-      versionNameSuffix = "-canary"
+      versionNameSuffix = if (ciRunNumber > 0) "-canary.$ciRunNumber" else "-canary"
       isMinifyEnabled = false
       signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
     }
@@ -109,6 +115,7 @@ dependencies {
   implementation(libs.androidx.lifecycle.runtime.compose)
   implementation(libs.androidx.lifecycle.runtime.ktx)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
+  implementation(libs.androidx.media)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
   ksp(libs.androidx.room.compiler)

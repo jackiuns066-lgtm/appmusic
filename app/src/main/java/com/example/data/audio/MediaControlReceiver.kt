@@ -15,6 +15,16 @@ class MediaControlReceiver : BroadcastReceiver() {
             MediaNotificationManager.ACTION_PLAY_PAUSE -> {
                 playerEngine.togglePlayPause()
             }
+            MediaNotificationManager.ACTION_PLAY -> {
+                playerEngine.resume()
+            }
+            MediaNotificationManager.ACTION_PAUSE -> {
+                playerEngine.pause()
+            }
+            MediaNotificationManager.ACTION_SEEK -> {
+                val position = intent.getLongExtra(MediaNotificationManager.EXTRA_SEEK_POSITION, 0L)
+                playerEngine.seekTo(position.coerceAtLeast(0L))
+            }
             MediaNotificationManager.ACTION_NEXT -> {
                 val skipNext = playerEngine.onSkipNextRequested ?: playerEngine.onTrackCompletedCallback
                 skipNext?.invoke()

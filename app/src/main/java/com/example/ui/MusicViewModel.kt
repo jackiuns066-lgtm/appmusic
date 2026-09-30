@@ -149,7 +149,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
     private var widgetSignature: String = ""
-    private var notificationSignature: String = ""
 
     /** Context whose resources follow the in-app language selection. */
     private val localizedContext: Context
@@ -177,26 +176,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             showToast(R.string.toast_stop_after_triggered)
         }
 
-        // Notification / lock screen controls. Only re-posted when something actually changed.
+        // Notification / lock screen media controls (title, artist, buttons and the timeline).
+        // The manager refreshes the MediaSession on every tick but only re-posts the notification
+        // when the visible content changes, so this is cheap even though it runs often.
         viewModelScope.launch {
             combine(playbackState, _settings) { state, setts -> state to setts }
                 .collect { (state, setts) ->
-                    val signature = listOf(
-                        state.currentTrack?.id ?: "",
-                        state.isPlaying,
-                        setts.lockScreenControlsEnabled,
-                        setts.languageMode
-                    ).joinToString("|")
-
-                    if (signature != notificationSignature) {
-                        notificationSignature = signature
-                        mediaNotificationManager.updateNotification(
-                            track = state.currentTrack,
-                            isPlaying = state.isPlaying,
-                            isEnabled = setts.lockScreenControlsEnabled,
-                            stringContext = localizedContext
-                        )
-                    }
+                    mediaNotificationManager.updatePlayback(
+                        track = state.currentTrack,
+                        isPlaying = state.isPlaying,
+                        isEnabled = setts.lockScreenControlsEnabled,
+                        positionMs = state.currentPositionMs,
+                        durationMs = state.durationMs,
+                        stringContext = localizedContext
+                    )
                 }
         }
 
