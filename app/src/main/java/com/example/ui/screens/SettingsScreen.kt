@@ -1,12 +1,15 @@
 package com.example.ui.screens
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,10 +32,15 @@ import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
@@ -55,24 +63,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
+import com.example.BuildConfig
+import com.example.R
+import com.example.data.brand.BrandLinks
 import com.example.ui.AppSettings
+import com.example.ui.i18n.AppLanguage
 
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
     sleepTimerRemaining: Int?,
-    onTogglePersian: () -> Unit,
+    onSetLanguage: (String) -> Unit,
     onToggleAmoled: () -> Unit,
     onSetAccentTheme: (String) -> Unit,
     onSetNowPlayingStyle: (String) -> Unit,
@@ -104,7 +112,7 @@ fun SettingsScreen(
             .testTag("settings_screen")
     ) {
         Text(
-            text = "تنظیمات پلیر Novo",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -121,7 +129,7 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "تنظیمات حرفه‌ای و جلوه‌های بصری",
+                        text = stringResource(R.string.settings_section_pro),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -130,12 +138,12 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "نوع صفحه پخش آهنگ (Visualizer Style):",
+                    text = stringResource(R.string.settings_visual_style_label),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "جلوه متحرک و گرافیکی مورد علاقه خود را انتخاب کنید",
+                    text = stringResource(R.string.settings_visual_style_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -143,10 +151,10 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 val visualizerOptions = listOf(
-                    Triple("neon_vinyl", "چرخش نئونی وینیل", "صفحه گرامافون دوّار با حلقه‌های نئونی"),
-                    Triple("spectrum_wave", "اکولایزر طیف نئونی", "امواج طیف فرکانس صوتی متحرک"),
-                    Triple("glass_3d", "کاور سه‌بعدی شیشه‌ای", "کاور آلبوم شناور با افکت شیشه‌ای"),
-                    Triple("pulse_rings", "امواج تپنده ریتمیک", "حلقه‌های متصاعد شونده با ضرب‌آهنگ")
+                    Triple("neon_vinyl", stringResource(R.string.style_neon_vinyl), stringResource(R.string.style_neon_vinyl_desc)),
+                    Triple("spectrum_wave", stringResource(R.string.style_spectrum_wave), stringResource(R.string.style_spectrum_wave_desc)),
+                    Triple("glass_3d", stringResource(R.string.style_glass_3d), stringResource(R.string.style_glass_3d_desc)),
+                    Triple("pulse_rings", stringResource(R.string.style_pulse_rings), stringResource(R.string.style_pulse_rings_desc))
                 )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -208,12 +216,12 @@ fun SettingsScreen(
 
                 // Minimum Duration Filter (Exclude ringtones)
                 Text(
-                    text = "فیلتر حذف زنگ و صداهای کوتاه:",
+                    text = stringResource(R.string.settings_min_duration_label),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "فایل‌های صوتی کمتر از این مدت به عنوان زنگ و پیام فیلتر می‌شوند",
+                    text = stringResource(R.string.settings_min_duration_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -224,7 +232,11 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val durationOptions = listOf(15 to "۱۵ ثانیه", 30 to "۳۰ ثانیه", 60 to "۱ دقیقه")
+                    val durationOptions = listOf(
+                        15 to stringResource(R.string.duration_15s),
+                        30 to stringResource(R.string.duration_30s),
+                        60 to stringResource(R.string.duration_60s)
+                    )
                     durationOptions.forEach { (sec, label) ->
                         FilterChip(
                             selected = settings.minDurationSeconds == sec,
@@ -238,7 +250,7 @@ fun SettingsScreen(
 
                 // Crossfade
                 Text(
-                    text = "تداخل نرم بین آهنگ‌ها (Crossfade):",
+                    text = stringResource(R.string.settings_crossfade_label),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -246,7 +258,12 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val crossfadeOptions = listOf(0 to "خاموش", 3 to "۳ ثانیه", 5 to "۵ ثانیه", 8 to "۸ ثانیه")
+                    val crossfadeOptions = listOf(
+                        0 to stringResource(R.string.action_off),
+                        3 to stringResource(R.string.crossfade_3s),
+                        5 to stringResource(R.string.crossfade_5s),
+                        8 to stringResource(R.string.crossfade_8s)
+                    )
                     crossfadeOptions.forEach { (sec, label) ->
                         FilterChip(
                             selected = settings.crossfadeSeconds == sec,
@@ -266,8 +283,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Headphones, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("توقف با قطع هندزفری", style = MaterialTheme.typography.bodyMedium)
-                        Text("توقف پخش موسیقی هنگام جدا شدن هدفون یا بلوتوث", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_headset_title), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_headset_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = settings.pauseOnHeadsetDisconnect,
@@ -285,8 +302,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.GraphicEq, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("خروجی صدای با کیفیت بالا (Hi-Fi)", style = MaterialTheme.typography.bodyMedium)
-                        Text("بهینه‌سازی بیت‌ریت و کاهش نویز برای صدای شفاف", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_hifi_title), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_hifi_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = settings.hifiAudioMode,
@@ -304,8 +321,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("کنترل‌های صفحه قفل و پنل اعلان", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("نمایش دکمه‌های کنترل (پخش، بعدی، قبلی) و کاور روی صفحه قفل گوشی", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_lockscreen_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_lockscreen_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(
                         checked = settings.lockScreenControlsEnabled,
@@ -324,7 +341,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "ظاهر و رنگ‌بندی",
+                    text = stringResource(R.string.settings_appearance),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -339,9 +356,9 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.DarkMode, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("تم مشکی عمیق (AMOLED)", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_amoled), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            "صرفه‌جویی در مصرف باتری برای صفحات اولد",
+                            stringResource(R.string.settings_amoled_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -355,7 +372,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Persian Direction Switch
+                // App language (system / Persian / English)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -363,13 +380,36 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Language, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("چیدمان راست‌به‌چپ (فارسی)", style = MaterialTheme.typography.bodyMedium)
-                        Text("سازگاری کامل با جهت متن فارسی", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_language_title), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            stringResource(R.string.settings_language_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Switch(
-                        checked = settings.isPersian,
-                        onCheckedChange = { onTogglePersian() }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val languageOptions = listOf(
+                        AppLanguage.MODE_SYSTEM to stringResource(R.string.language_system),
+                        AppLanguage.MODE_PERSIAN to stringResource(R.string.language_persian),
+                        AppLanguage.MODE_ENGLISH to stringResource(R.string.language_english)
                     )
+                    languageOptions.forEach { (mode, label) ->
+                        FilterChip(
+                            selected = settings.languageMode == mode,
+                            onClick = { onSetLanguage(mode) },
+                            label = { Text(label) },
+                            modifier = Modifier.testTag("language_chip_" + mode)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -382,8 +422,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.ColorLens, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text("رنگ اصلی پوسته", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("انتخاب تم رنگی دلخواه برای بخش‌های مختلف برنامه", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_accent_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_accent_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -391,11 +431,11 @@ fun SettingsScreen(
 
                 // Horizontal Row of Color Swatches
                 val colorThemes = listOf(
-                    Triple("gold", "طلایی", Color(0xFFFFC107)),
-                    Triple("purple", "بنفش", Color(0xFF7C4DFF)),
-                    Triple("emerald", "زمردی", Color(0xFF00E676)),
-                    Triple("cyan", "فیروزه‌ای", Color(0xFF00E5FF)),
-                    Triple("crimson", "یاقوتی", Color(0xFFFF5252))
+                    Triple("gold", stringResource(R.string.color_gold), Color(0xFFFFC107)),
+                    Triple("purple", stringResource(R.string.color_purple), Color(0xFF7C4DFF)),
+                    Triple("emerald", stringResource(R.string.color_emerald), Color(0xFF00E676)),
+                    Triple("cyan", stringResource(R.string.color_cyan), Color(0xFF00E5FF)),
+                    Triple("crimson", stringResource(R.string.color_crimson), Color(0xFFFF5252))
                 )
 
                 Row(
@@ -428,7 +468,7 @@ fun SettingsScreen(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
-                                        contentDescription = "انتخاب شده",
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = if (code == "gold" || code == "cyan" || code == "emerald") Color.Black else Color.White,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -456,7 +496,7 @@ fun SettingsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "ابزارهای کتابخانه و زمان‌بندی",
+                    text = stringResource(R.string.settings_tools_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -474,20 +514,20 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Timer, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("تایمر خواب خودکار", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.settings_sleep_timer), style = MaterialTheme.typography.bodyMedium)
                         Text(
-                            text = if (sleepTimerRemaining != null) "$sleepTimerRemaining دقیقه تا توقف باقیست" else "غیرفعال است",
+                            text = if (sleepTimerRemaining != null) stringResource(R.string.settings_sleep_timer_remaining, sleepTimerRemaining) else stringResource(R.string.settings_disabled),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (sleepTimerRemaining != null) {
                         Button(onClick = onCancelSleepTimer) {
-                            Text("لغو")
+                            Text(stringResource(R.string.settings_turn_off))
                         }
                     } else {
                         Button(onClick = { showSleepTimerDialog = true }) {
-                            Text("تنظیم")
+                            Text(stringResource(R.string.action_set))
                         }
                     }
                 }
@@ -512,8 +552,8 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("بروزرسانی کتابخانه محلی", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
-                        Text("اسکن مجدد و حذف خودکار زنگ‌ها و صداهای کوتاه", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.settings_rescan_title), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.settings_rescan_desc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -532,7 +572,7 @@ fun SettingsScreen(
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "درباره اپلیکیشن Novo",
+                        text = stringResource(R.string.settings_about_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -541,7 +581,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "موزیک پلیر مدرن، آفلاین و حرفه‌ای Novo",
+                    text = stringResource(R.string.settings_about_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -550,7 +590,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "طراحی شده توسط تیم نوین وب\nwebnovo.ir",
+                    text = stringResource(R.string.settings_about_author),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -558,7 +598,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "نسخه ۱.۰.۰ | ارائه دهنده پیشرفته‌ترین قابلیت‌های صوتی، تفکیک پوشه‌ای، اکولایزر ۵ کاناله گرافیکی و کنترل اختصاصی صفحه قفل بدون تبلیغات و کاملاً رایگان.",
+                    text = stringResource(R.string.settings_about_version, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -579,25 +619,95 @@ fun SettingsScreen(
                     ) {
                         Icon(imageVector = Icons.Default.OpenInBrowser, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("وب‌سایت", fontSize = 12.sp)
+                        Text(stringResource(R.string.action_website), fontSize = 12.sp)
                     }
 
                     Button(
                         onClick = {
                             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_SUBJECT, "دانلود موزیک پلیر Novo")
-                                putExtra(Intent.EXTRA_TEXT, "موزیک پلیر مدرن و حرفه‌ای Novo - طراحی شده توسط نوین وب: https://webnovo.ir")
+                                putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.app_share_subject))
+                                putExtra(Intent.EXTRA_TEXT, context.getString(R.string.app_share_text))
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, "اشتراک‌گذاری Novo"))
+                            context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.app_share_chooser)))
                         },
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(imageVector = Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("اشتراک", fontSize = 12.sp)
+                        Text(stringResource(R.string.action_share_app), fontSize = 12.sp)
                     }
                 }
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Brand section: our other work + a measurable way to support the app
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Storefront,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.settings_brand_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_brand_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Language,
+                    title = stringResource(R.string.brand_website_title),
+                    description = stringResource(R.string.brand_website_desc),
+                    testTag = "brand_website_row",
+                    onClick = { BrandLinks.openWebsite(context) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Star,
+                    title = stringResource(R.string.brand_rate_title),
+                    description = stringResource(R.string.brand_rate_desc),
+                    testTag = "brand_rate_row",
+                    onClick = { BrandLinks.openStoreListing(context) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Share,
+                    title = stringResource(R.string.invite_title),
+                    description = stringResource(R.string.invite_desc),
+                    testTag = "brand_invite_row",
+                    onClick = { BrandLinks.shareApp(context) }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BrandLinkRow(
+                    icon = Icons.Default.Refresh,
+                    title = stringResource(R.string.settings_update_title),
+                    description = stringResource(R.string.settings_update_desc),
+                    testTag = "brand_update_row",
+                    onClick = { BrandLinks.openLatestRelease(context) }
+                )
             }
         }
     }
@@ -606,12 +716,12 @@ fun SettingsScreen(
         val timerOptions = listOf(15, 30, 45, 60, 90)
         AlertDialog(
             onDismissRequest = { showSleepTimerDialog = false },
-            title = { Text("تنظیم تایمر خواب") },
+            title = { Text(stringResource(R.string.dialog_sleep_timer_title)) },
             text = {
                 Column {
                     timerOptions.forEach { minutes ->
                         Text(
-                            text = "$minutes دقیقه بعد",
+                            text = stringResource(R.string.sleep_timer_minutes_option, minutes),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -627,9 +737,55 @@ fun SettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showSleepTimerDialog = false }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun BrandLinkRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    testTag: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Icon(
+            imageVector = Icons.Default.OpenInBrowser,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
         )
     }
 }

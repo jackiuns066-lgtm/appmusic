@@ -1,0 +1,337 @@
+name: Build Android APK
+
+# ── زمان اجرا ──────────────────────────────────────────────────────────────
+# با هر push روی شاخهٔ main (و شاخهٔ کاری فعلی)، روی Pull Request به main
+# و همچنین با اجرای دستی از تب Actions.
+on:
+  push:
+    branches:
+      - "main"
+      - "arena/01a0f112-appmusic"
+  pull_request:
+    branches:
+      - "main"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# اگر چند push پشت سر هم انجام شود، اجرای قبلی لغو می‌شود
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # در صورت نبود، Android SDK 36 (Android 16) را نصب می‌کند
+      - name: Ensure Android SDK 36
+        continue-on-error: true
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          [ -x "$SDKMANAGER" ] || SDKMANAGER="$(command -v sdkmanager || true)"
+          if [ -n "$SDKMANAGER" ] && [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+            "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" > /dev/null 2>&1 || true
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      # کلید امضای اختصاصی از Secrets خوانده می‌شود (اختیاری).
+      # اگر تنظیم نشده باشد، نسخهٔ release با همان کلید debug امضا می‌شود تا نصب‌شدنی بماند.
+      - name: Decode upload keystore
+        env:
+          NOVO_KEYSTORE_BASE64: ${{ secrets.NOVO_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$NOVO_KEYSTORE_BASE64" ]; then
+            echo "$NOVO_KEYSTORE_BASE64" | base64 -d > keystore/novo-upload.p12
+            echo "✅ upload keystore ready"
+          else
+            echo "ℹ️ NOVO_KEYSTORE_BASE64 is not set - the release APK will use the debug key"
+          fi
+
+      - name: Build APKs
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+          NOVO_KEY_ALIAS: ${{ secrets.NOVO_KEY_ALIAS }}
+          NOVO_KEY_PASSWORD: ${{ secrets.NOVO_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          ./gradlew assembleStandardDebug assembleStandardRelease assembleLegacyRelease --stacktrace 2>&1 | tee build-log.txt
+
+      # AAB: قالب مورد نیاز Google Play / کافه‌بازار / مایکت برای انتشار رسمی.
+      # اگر در این قالب منتشر شود، همهٔ کاربران به‌روزرسانی را از فروشگاه می‌گیرند و
+      # هرگز خطای «بستهٔ متناقض» (package conflicts) نمی‌بینند.
+      - name: Build release bundle (AAB for the stores)
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+          NOVO_KEY_ALIAS: ${{ secrets.NOVO_KEY_ALIAS }}
+          NOVO_KEY_PASSWORD: ${{ secrets.NOVO_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          ./gradlew bundleStandardRelease --stacktrace 2>&1 | tee -a build-log.txt \
+            || echo "::warning::bundleRelease failed - the APKs are unaffected"
+
+      # اثر انگشت کلید امضا در لاگ چاپ می‌شود تا مطمئن شویم همهٔ بیلدها
+      # با یک کلید یکسان امضا می‌شوند (شرط نصب روی نسخهٔ قبلی).
+      # اثر انگشت کلید در هر بیلد با ::warning:: چاپ می‌شود تا از تب Actions قابل دیدن باشد
+      - name: Show signing certificates
+        if: always()
+        run: |
+          KEYSTORE_FP=$(keytool -list -v -keystore keystore/novo-debug.p12 -storepass android -storetype PKCS12 2>&1 \
+            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' || true)
+          echo "::warning::project keystore SHA256: ${KEYSTORE_FP:-unknown}"
+
+          # توجه: این APKها با امضای v2/v3 (نه JAR signature) امضا شده‌اند، پس باید با apksigner خوانده شوند.
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          echo "apksigner: ${APKSIGNER:-not found}"
+
+          for apk in \
+            app/build/outputs/apk/standard/debug/app-standard-debug.apk \
+            app/build/outputs/apk/standard/release/app-standard-release.apk \
+            app/build/outputs/apk/legacy/release/app-legacy-release.apk ; do
+            [ -f "$apk" ] || continue
+            FP=$([ -n "$APKSIGNER" ] && "$APKSIGNER" verify --print-certs "$apk" 2>/dev/null \
+              | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' || true)
+            echo "::warning::$(basename "$apk") SHA256: ${FP:-unknown}"
+          done
+
+      # شناسهٔ بسته و کد نسخهٔ هر خروجی را در لاگ چاپ می‌کند تا از تب Actions قابل بررسی باشد
+      - name: Show package ids and version codes
+        if: always()
+        run: |
+          AAPT2=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 2>/dev/null | sort -V | tail -1)
+          echo "aapt2: ${AAPT2:-not found}"
+          for apk in \
+            app/build/outputs/apk/standard/debug/app-standard-debug.apk \
+            app/build/outputs/apk/standard/release/app-standard-release.apk \
+            app/build/outputs/apk/legacy/release/app-legacy-release.apk ; do
+            [ -f "$apk" ] || continue
+            NAME=$(basename "$apk")
+            if [ -n "$AAPT2" ]; then
+              PKG=$("$AAPT2" dump packagename "$apk" 2>/dev/null || echo unknown)
+            else
+              PKG=unknown
+            fi
+            echo "::notice::$NAME -> package=$PKG"
+          done
+
+      # اگر کلید خصوصی فروشگاه تنظیم شده باشد، نسخهٔ فروشگاه نباید با کلید عمومی دیباگ امضا شده باشد
+      - name: Verify store build uses the private key
+        if: success()
+        env:
+          NOVO_KEYSTORE_PASSWORD: ${{ secrets.NOVO_KEYSTORE_PASSWORD }}
+        run: |
+          APK="app/build/outputs/apk/standard/release/app-standard-release.apk"
+          [ -f "$APK" ] || { echo "::warning::$APK not found"; exit 0; }
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          [ -n "$APKSIGNER" ] || { echo "::warning::apksigner not found"; exit 0; }
+          PUBLIC_FP=$(keytool -list -v -keystore keystore/novo-debug.p12 -storepass android -storetype PKCS12 2>&1 \
+            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          APK_FP=$("$APKSIGNER" verify --print-certs "$APK" 2>/dev/null \
+            | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          echo "store APK key : $APK_FP"
+          if [ -n "$NOVO_KEYSTORE_PASSWORD" ]; then
+            if [ "$APK_FP" = "$PUBLIC_FP" ]; then
+              echo "::error::the store APK is still signed with the public debug key even though an upload key is configured"
+              exit 1
+            fi
+            echo "✅ store APK is signed with the private upload key"
+          else
+            echo "::warning::no NOVO_KEYSTORE_PASSWORD secret yet - the store APK is signed with the public debug key. Run the 'Make Upload Keystore' workflow and add the 4 secrets before uploading to a store."
+          fi
+
+      # بررسی امضا: اگر APK با کلید ثابت پروژه امضا نشده باشد، بیلد Fail می‌شود
+      - name: Verify debug APK signature
+        if: success()
+        run: |
+          APK="app/build/outputs/apk/standard/debug/app-standard-debug.apk"
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          EXPECTED=$(keytool -list -v -keystore keystore/novo-debug.p12 -storepass android -storetype PKCS12 2>&1 \
+            | grep -i -m1 'SHA256:' | sed 's/.*SHA256: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F')
+          ACTUAL=$([ -n "$APKSIGNER" ] && "$APKSIGNER" verify --print-certs "$APK" 2>&1 \
+            | grep -i -m1 'certificate SHA-256 digest' | sed 's/.*digest: *//' | tr -cd '0-9A-Fa-f' | tr 'a-f' 'A-F' || true)
+          echo "keystore: $EXPECTED"
+          echo "apk     : $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "::error::could not read the signature of $APK (apksigner=${APKSIGNER:-missing})"
+            "$APKSIGNER" verify --print-certs "$APK" 2>&1 | head -20 || true
+            exit 1
+          fi
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::app-standard-debug.apk is NOT signed with keystore/novo-debug.p12 (apk=$ACTUAL keystore=$EXPECTED) - installations would conflict."
+            exit 1
+          fi
+          echo "✅ debug APK is signed with the project keystore"
+
+      # خطاهای کامپایل را به‌صورت Annotation نشان می‌دهد (حداکثر ۱۰ مورد)
+      - name: Report build errors
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import io, os
+
+          path = "build-log.txt"
+          if not os.path.exists(path):
+              print("::error::build-log.txt not found")
+              raise SystemExit(0)
+
+          lines = io.open(path, encoding="utf-8", errors="replace").read().split("\n")
+          keys = ("e: ", "error:", "FAILURE:", "What went wrong", "Execution failed", "Caused by")
+          picked = [l for l in lines if l.strip().startswith(keys)]
+          if not picked:
+              picked = lines[-40:]
+
+          text = "\n".join(picked)[-55000:] or "unknown failure"
+          summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary:
+              with io.open(summary, "a", encoding="utf-8") as fh:
+                  fh.write("## Build errors\n\n```\n" + text + "\n```\n")
+
+          chunks, current = [], ""
+          for line in text.split("\n"):
+              if len(current) + len(line) + 1 > 5000:
+                  chunks.append(current)
+                  current = ""
+              current += line + "\n"
+          chunks.append(current)
+
+          for chunk in chunks[:10]:
+              escaped = chunk.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+              print("::error::" + escaped)
+          PY
+
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-apk
+          path: app/build/outputs/apk/standard/debug/app-standard-debug.apk
+          if-no-files-found: error
+
+      - name: Upload release APK
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-release-apk
+          path: app/build/outputs/apk/standard/release/app-standard-release.apk
+          if-no-files-found: warn
+
+      # نسخهٔ دوم با شناسهٔ بستهٔ متفاوت: همیشه نصب می‌شود، حتی اگر نسخهٔ قبلی
+      # جایی روی گوشی (پروفایل کاری، فضای دوم، اپ کلون‌شده) پنهان مانده باشد.
+      - name: Upload canary APK (different package id)
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-canary-apk
+          path: app/build/outputs/apk/legacy/release/app-legacy-release.apk
+          if-no-files-found: warn
+
+      - name: Upload release bundle (AAB)
+        if: success()
+        uses: actions/upload-artifact@v6
+        with:
+          name: my-app-aab
+          path: app/build/outputs/bundle/standardRelease/app-standard-release.aab
+          if-no-files-found: warn
+
+      # لینک دانلود عمومی و ثابت (بدون نیاز به حساب گیت‌هاب) — همان لینکی که
+      # می‌توانید برای کاربران بفرستید. با هر بیلد به‌روزرسانی می‌شود.
+      - name: Publish public download links
+        if: success() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          REPO="$GITHUB_REPOSITORY"
+          VERSION_CODE=$((10100 + RUN_NUMBER))
+          SHA=$(git rev-parse --short HEAD)
+
+          NOTES_MAIN="### Novo - آخرین بیلد
+          **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
+
+          - \`Novo-release.apk\` - نسخهٔ اصلی (شناسهٔ بسته: ir.webnovo.novo)
+          - \`Novo-debug.apk\` - همان اپ با قابلیت گزارش خطا
+
+          اگر روی گوشی شما نسخهٔ قدیمی از همین شناسه نصب است، این فایل بدون حذف آن به‌روزرسانی می‌شود.
+          اگر خطای «بستهٔ متناقض» دیدید، یعنی نسخه‌ای با کلید امضای دیگری نصب است:
+          ابتدا همان اپ قدیمی را حذف کنید یا از فایل \`Novo-canary.apk\` استفاده کنید."
+
+          NOTES_CANARY="### Novo Canary - آخرین بیلد
+          **کد نسخه:** $VERSION_CODE · **کمی:** $SHA · **شمارهٔ اجرا:** $RUN_NUMBER
+
+          - \`Novo-canary.apk\` - کانال آزمایشی با شناسهٔ جدا (com.aistudio.avamusic.player.canary)
+
+          این فایل حتی وقتی نسخهٔ اصلی به دلیلی روی گوشی نصب نمی‌شود، نصب می‌شود و روی هر گوشی‌ای
+          که از قبل همین کانال را دارد، به‌صورت آپدیت در جا می‌نشیند."
+
+          if gh release view apk-latest --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit apk-latest --repo "$REPO" --notes "$NOTES_MAIN" --latest
+          else
+            gh release create apk-latest --repo "$REPO" --title "Novo - latest build" --notes "$NOTES_MAIN" --latest
+          fi
+          for f in app/build/outputs/apk/standard/release/app-standard-release.apk app/build/outputs/apk/standard/debug/app-standard-debug.apk; do
+            [ -f "$f" ] || continue
+            case "$f" in *release*) NAME="Novo-release.apk" ;; *) NAME="Novo-debug.apk" ;; esac
+            cp "$f" "/tmp/$NAME"
+            gh release upload apk-latest "/tmp/$NAME" --repo "$REPO" --clobber
+          done
+
+          if gh release view apk-canary --repo "$REPO" >/dev/null 2>&1; then
+            gh release edit apk-canary --repo "$REPO" --notes "$NOTES_CANARY" --prerelease
+          else
+            gh release create apk-canary --repo "$REPO" --title "Novo Canary - latest build" --notes "$NOTES_CANARY" --prerelease
+          fi
+          if [ -f app/build/outputs/apk/legacy/release/app-legacy-release.apk ]; then
+            cp app/build/outputs/apk/legacy/release/app-legacy-release.apk /tmp/Novo-canary.apk
+            gh release upload apk-canary /tmp/Novo-canary.apk --repo "$REPO" --clobber
+          fi
+
+          # فایل AAB (قالب انتشار کافه‌بازار/گوگل‌پلی) هم عمومی می‌شود تا بدون حساب گیت‌هاب قابل دانلود باشد.
+          AAB=app/build/outputs/bundle/standardRelease/app-standard-release.aab
+          if [ -f "$AAB" ]; then
+            # نسخه‌های قدیمی AAB را پاک می‌کنیم تا صفحهٔ انتشار بی‌دلیل حجیم نشود
+            for old in $(gh release view apk-latest --repo "$REPO" --json assets --jq '.assets[].name' | grep -E '^Novo-?[0-9]*\.aab$' | grep -v '^Novo-latest\.aab$' || true); do
+              gh release delete-asset apk-latest "$old" --repo "$REPO" --yes >/dev/null 2>&1 || true
+            done
+            # نسخهٔ شماره‌دار (برای آرشیو) و نسخهٔ با نام ثابت (لینکی که همیشه کار می‌کند و
+            # می‌شود آن را در پیشخان فروشگاه بوکمارک کرد)
+            cp "$AAB" "/tmp/Novo-$VERSION_CODE.aab"
+            cp "$AAB" "/tmp/Novo-latest.aab"
+            gh release upload apk-latest "/tmp/Novo-$VERSION_CODE.aab" --repo "$REPO" --clobber
+            gh release upload apk-latest "/tmp/Novo-latest.aab" --repo "$REPO" --clobber
+            echo "bundle (archive): https://github.com/$REPO/releases/download/apk-latest/Novo-$VERSION_CODE.aab"
+            echo "bundle (stable) : https://github.com/$REPO/releases/download/apk-latest/Novo-latest.aab"
+          fi
+
+          echo "main channel : https://github.com/$REPO/releases/download/apk-latest/Novo-release.apk"
+          echo "canary       : https://github.com/$REPO/releases/download/apk-canary/Novo-canary.apk"
+          echo "::notice::public download links updated"
+
+      # لاگ کامل بیلد (هم برای موفق و هم برای ناموفق) + گزارش‌های خطا
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-log
+          path: |
+            build-log.txt
+            app/build/reports/
+          if-no-files-found: ignore

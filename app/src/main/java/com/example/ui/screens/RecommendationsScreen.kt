@@ -38,16 +38,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
 import com.example.data.recommendation.TasteProfile
 import com.example.data.recommendation.TrackRecommendation
 import com.example.ui.components.TrackCoverImage
+import com.example.ui.i18n.displayArtist
+import com.example.ui.i18n.displayGenre
+import com.example.ui.i18n.displayMood
+import com.example.ui.i18n.recommendationReason
 
 @Composable
 fun RecommendationsScreen(
@@ -88,7 +94,7 @@ fun RecommendationsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "هوش تحلیلی سلیقه موسیقی شما",
+                        text = stringResource(R.string.rec_taste_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -100,9 +106,9 @@ fun RecommendationsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    TasteMetricChip(label = "سبک محبوب", value = tasteProfile.topGenre)
-                    TasteMetricChip(label = "حال‌وهوا", value = tasteProfile.topMood)
-                    TasteMetricChip(label = "آهنگ‌های پسندیده", value = "${tasteProfile.favoriteCount}")
+                    TasteMetricChip(label = stringResource(R.string.rec_label_top_genre), value = displayGenre(tasteProfile.topGenre))
+                    TasteMetricChip(label = stringResource(R.string.rec_label_mood), value = displayMood(tasteProfile.topMood))
+                    TasteMetricChip(label = stringResource(R.string.rec_label_liked), value = "${tasteProfile.favoriteCount}")
                 }
             }
         }
@@ -110,7 +116,7 @@ fun RecommendationsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "پیشنهادهای هوشمند بر اساس الگوی شنیداری",
+            text = stringResource(R.string.rec_section_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
@@ -125,7 +131,7 @@ fun RecommendationsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "با گوش دادن و لایک کردن آهنگ‌های بیشتر، پیشنهادات دقیق‌تر می‌شوند.",
+                    text = stringResource(R.string.rec_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -174,7 +180,7 @@ fun RecommendationsScreen(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = rec.track.artist,
+                                        text = displayArtist(rec.track.artist),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -188,7 +194,7 @@ fun RecommendationsScreen(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
-                                        text = "${rec.matchPercentage}٪ تطابق",
+                                        text = stringResource(R.string.rec_match, rec.matchPercentage),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
@@ -199,7 +205,7 @@ fun RecommendationsScreen(
                                 IconButton(onClick = { onToggleFavorite(rec.track) }) {
                                     Icon(
                                         imageVector = if (rec.track.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                        contentDescription = "علاقه‌مندی",
+                                        contentDescription = stringResource(R.string.cd_favorite),
                                         tint = if (rec.track.isFavorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -207,7 +213,7 @@ fun RecommendationsScreen(
                                 IconButton(onClick = { trackForPlaylist = rec.track }) {
                                     Icon(
                                         imageVector = Icons.Default.PlaylistAdd,
-                                        contentDescription = "افزودن به لیست",
+                                        contentDescription = stringResource(R.string.cd_add_to_playlist),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -216,7 +222,7 @@ fun RecommendationsScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "💡 ${rec.reasonFa}",
+                                text = "💡 " + recommendationReason(rec),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                             )

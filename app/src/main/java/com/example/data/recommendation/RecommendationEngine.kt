@@ -10,10 +10,17 @@ data class TasteProfile(
     val totalPlays: Int = 0
 )
 
+/** Why a track has been recommended. The text itself is resolved by the UI in the active language. */
+enum class RecommendationReason {
+    GENRE_AND_MOOD, GENRE, MOOD, VARIETY
+}
+
 data class TrackRecommendation(
     val track: TrackEntity,
     val matchPercentage: Int,
-    val reasonFa: String
+    val reasonType: RecommendationReason,
+    val reasonGenre: String = "",
+    val reasonMood: String = ""
 )
 
 object RecommendationEngine {
@@ -70,21 +77,20 @@ object RecommendationEngine {
 
                 val boundedScore = score.coerceIn(45, 98)
 
-                val reason = when {
+                val reasonType = when {
                     track.genre == profile.topGenre && track.mood == profile.topMood ->
-                        "مطابق با سلیقه شما در سبک ${track.genre} و حال‌وهوای ${track.mood}"
-                    track.genre == profile.topGenre ->
-                        "بر اساس علاقه شما به آهنگ‌های سبک ${track.genre}"
-                    track.mood == profile.topMood ->
-                        "متناسب با ریتم و حال‌وهوای موردعلاقه شما"
-                    else ->
-                        "پیشنهاد شده برای تنوع در لیست شنیداری"
+                        RecommendationReason.GENRE_AND_MOOD
+                    track.genre == profile.topGenre -> RecommendationReason.GENRE
+                    track.mood == profile.topMood -> RecommendationReason.MOOD
+                    else -> RecommendationReason.VARIETY
                 }
 
                 TrackRecommendation(
                     track = track,
                     matchPercentage = boundedScore,
-                    reasonFa = reason
+                    reasonType = reasonType,
+                    reasonGenre = track.genre,
+                    reasonMood = track.mood
                 )
             }
             .sortedByDescending { it.matchPercentage }

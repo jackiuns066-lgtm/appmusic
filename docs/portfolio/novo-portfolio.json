@@ -1,0 +1,66 @@
+{
+  "slug": "novo-music-player",
+  "published": true,
+  "title_fa": "نوو (Novo) — پخش‌کنندهٔ موسیقی آفلاین",
+  "title_en": "Novo — Offline Music Player for Android",
+  "category_fa": "اپلیکیشن اندروید",
+  "category_en": "Android application",
+  "year": "1405 / 2026",
+  "client_fa": "محصول داخلی نوین‌وب",
+  "client_en": "In-house Novin Web product",
+  "role_fa": "طراحی محصول، توسعهٔ اندروید، CI/CD و انتشار",
+  "role_en": "Product design, Android development, CI/CD and release",
+  "status_fa": "ثبت‌شده در کافه‌بازار (در حال بررسی) + کانال آزمایشی برای تست‌کننده‌ها",
+  "status_en": "Submitted to Cafe Bazaar (under review) + a separate tester channel",
+  "cover_image": "store/screenshots/03-home-widget.png",
+  "gallery": [
+    "store/screenshots/01-songs-tabs.png",
+    "store/screenshots/02-now-playing-swipe.png",
+    "store/screenshots/03-home-widget.png",
+    "store/screenshots/04-equalizer.png",
+    "store/screenshots/05-settings-fa.png",
+    "store/screenshots/06-brand-novinweb.png"
+  ],
+  "links": {
+    "store_fa": "https://cafebazaar.ir/app/ir.webnovo.novo",
+    "releases": "https://github.com/jackiuns066-lgtm/appmusic/releases",
+    "apk_public": "https://github.com/jackiuns066-lgtm/appmusic/releases/download/apk-latest/Novo-release.apk",
+    "apk_testers": "https://github.com/jackiuns066-lgtm/appmusic/releases/download/apk-canary/Novo-canary.apk",
+    "brand": "https://webnovo.ir/?utm_source=portfolio&utm_medium=website&utm_campaign=novo_case_study"
+  },
+  "stack": [
+    "Kotlin", "Jetpack Compose", "Room", "MediaSession / MediaStyle",
+    "RemoteViews Widget", "GitHub Actions", "CI/CD", "Android 7 → 16"
+  ],
+  "summary_fa": "پخش‌کنندهٔ موسیقی اندروید برای آهنگ‌های روی خود گوشی؛ بدون اینترنت، بدون تبلیغ و بدون ثبت‌نام — با ویجت حرفه‌ای، اکولایزر ۵ باندی و کنترل کامل روی صفحهٔ قفل.",
+  "summary_en": "An Android music player for the songs already on your phone: no internet, no ads, no sign-up — with a pro home-screen widget, a 5-band equalizer and full lock-screen controls.",
+  "body_fa": [
+    "ماجرا از یک نارضایتی ساده شروع شد: پخش‌کننده‌های فارسی یا پر از تبلیغ بودند، یا برای ساده‌ترین کار به اینترنت وابسته. «نوو» را ساختیم تا آهنگ‌های خودِ کاربر، در یک رابط تمیز و سریع پخش شوند — همان‌طور که باید باشد. در طول راه، به‌جای اضافه‌کردن امکانات نیمه‌کاره، روی جزئیاتی تمرکز کردیم که کاربر هر روز لمس می‌کند: ویجت صفحهٔ اصلی، کنترل روی صفحهٔ قفل و صدای قابل تنظیم.",
+    "ویجت، ویجت واقعی است: کاور گِردشده، تایم‌لاین با زمان جاری و کل، و شش کنترل — شافل، قبلی، پخش/توقف، بعدی، تکرار و علاقه‌مندی. رنگ نوار زمان از رنگ کاور آهنگ گرفته می‌شود و اگر ویجت را کوچک کنید، خودش به چیدمان فشرده می‌رود. کنار آن، صفحهٔ قفل و اعلان هم دکمه‌های قبلی/بعدی/توقف/پخش و نوار زمان قابل کشیدن دارند، بدون هیچ متن اضافه.",
+    "سخت‌ترین بخش، چیزی بود که در نگاه اول ساده به‌نظر می‌رسید: «نصب‌شدن» اپ. کاربران پیام «بستهٔ متناقض است» می‌گرفتند، چون نسخهٔ جدید با کلید امضای دیگری ساخته می‌شد و شناسهٔ اپ با نسخه‌ای دیگر تداخل داشت. مسئله را ریشه‌ای حل کردیم: کلید امضای پایدار، کد نسخهٔ خودافزا برای هر بیلد، مهاجرت شناسهٔ بسته به شناسهٔ اختصاصی برند (ir.webnovo.novo) و یک کانال جداگانه برای تست‌کننده‌ها. از آن به بعد هر نسخه «آپدیت در جا» می‌شود و کاربر لازم نیست چیزی را حذف کند.",
+    "روی انتشار هم به همان اندازه وقت گذاشتیم که روی کد: هر تغییر، روی GitHub Actions به سه خروجی تبدیل می‌شود (نسخهٔ دیباگ، نسخهٔ انتشار و فایل AAB فروشگاه) با امضای یکسان و شمارهٔ نسخهٔ فزاینده؛ لینک‌های دانلود ثابت‌اند و هر بیلد خودکار منتشر می‌شود. تجربهٔ اولین اجرا، درخواست امتیاز در لحظهٔ درست و دعوت دوستان هم از همان ابتدا در محصول دیده شده‌اند.",
+    "امروز نوو در کافه‌بازار در حال بررسی است؛ رایگان، بدون تبلیغ و بدون خرید درون‌برنامه‌ای. اپ حتی مجوز اینترنت هم ندارد — کتابخانه، پلی‌لیست‌ها و تنظیمات فقط روی گوشی کاربر می‌مانند."
+  ],
+  "body_en": [
+    "It started with an everyday irritation: Persian music players were either stuffed with ads or depended on the internet for the simplest task. Novo was built so a user's own music plays in a clean, fast interface — the way it should. Along the way we deliberately skipped half-finished extras and focused on what people touch every day: the home-screen widget, the lock screen, and sound they can tune.",
+    "The widget is a real one: rounded artwork, an elapsed/total timeline and six controls (shuffle, previous, play/pause, next, repeat, favourite). The timeline takes its colour from the album art, and resizing the widget switches it to a compact layout automatically. The lock screen and notification mirror that with previous/next/stop/play and a draggable timeline, and no extra text.",
+    "The hardest part looked trivial at first: getting the app to install. Users hit 'package conflicts with an existing package' because new builds were signed with a different key and the package id clashed with another build. We fixed it at the root: a stable signing key, an auto-incrementing version code per build, migration to a brand-owned package id (ir.webnovo.novo) and a separate tester channel. Since then every release is an in-place update and nobody has to uninstall anything.",
+    "Release engineering got as much attention as the code: every change turns into three outputs on GitHub Actions (debug, release and a store-ready AAB) with identical signing and a rising version code, stable download links, and automatic publishing. A first-run tour, a well-timed rating prompt and an invite-a-friend action were part of the product from day one.",
+    "Novo is now under review on Cafe Bazaar — free, ad-free, with no in-app purchases. The app does not even request the internet permission: the library, playlists and settings stay on the user's phone."
+  ],
+  "highlights_fa": [
+    "ویجت صفحهٔ اصلی با شش کنترل و رنگ تایم‌لاین برگرفته از کاور آهنگ",
+    "کنترل کامل روی صفحهٔ قفل و اعلان با نوار زمان قابل کشیدن",
+    "اکولایزر ۵ باندی گرافیکی + Bass Boost و صدای سه‌بعدی",
+    "تب‌های لمسی و جابه‌جایی آهنگ با کشیدن کاور (با انیمیشن)",
+    "دو زبان با تشخیص خودکار، پوستهٔ AMOLED و پنج تم رنگی",
+    "بدون تبلیغ و بدون مجوز اینترنت — حریم خصوصی اثبات‌پذیر",
+    "خط لولهٔ CI/CD: هر تغییر → دیباگ + انتشار + AAB با امضای ثابت"
+  ],
+  "metrics_fa": [
+    { "label": "حجم اپ", "value": "حدود ۱۳ مگابایت" },
+    { "label": "سازگاری", "value": "اندروید ۷ تا ۱۶" },
+    { "label": "کنترل‌های ویجت", "value": "۶ دکمه + تایم‌لاین" },
+    { "label": "هزینهٔ کاربر", "value": "رایگان، بدون تبلیغ" }
+  ]
+}

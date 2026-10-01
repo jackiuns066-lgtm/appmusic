@@ -1,12 +1,14 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.AvaMusicApp
+import com.example.R
 import com.example.data.audio.AudioPlayerEngine
 import com.example.data.audio.MediaNotificationManager
 import com.example.data.audio.PlaybackState
@@ -20,6 +22,14 @@ import com.example.data.recommendation.RecommendationEngine
 import com.example.data.recommendation.TasteProfile
 import com.example.data.recommendation.TrackRecommendation
 import com.example.data.repository.MusicRepository
+import com.example.ui.i18n.AppLanguage
+import com.example.ui.i18n.LocaleAwareContext
+import com.example.ui.i18n.equalizerPresetTitle
+import com.example.widget.NovoWidgetProvider
+import com.example.widget.WidgetStateStore
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,9 +47,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
-import java.util.UUID
+
+private const val WIDGET_PROGRESS_STEP_MS = 2000L
 
 enum class ScreenDestination {
     TRACKS, CATEGORIES, PLAYLISTS, RECOMMENDATIONS, EQUALIZER, SETTINGS, NOW_PLAYING
@@ -50,7 +59,8 @@ enum class SortOrder {
 }
 
 data class AppSettings(
-    val isPersian: Boolean = true,
+    // system | fa | en  (see AppLanguage)
+    val languageMode: String = AppLanguage.MODE_SYSTEM,
     val isAmoledDark: Boolean = false,
     val accentTheme: String = "gold",
     val sleepTimerMinutes: Int = 0,
@@ -70,6 +80,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val playerEngine = (application as? AvaMusicApp)?.playerEngine ?: AudioPlayerEngine(context)
     private val mediaNotificationManager = MediaNotificationManager(context)
     private val preferenceManager = PreferenceManager(context)
+
+    companion object {
+        /** A user who has played this many songs has formed an opinion worth asking about. */
+        private const val RATE_PROMPT_MIN_PLAYS = 10
+
+        /** After "later", stay quiet for a week before asking again. */
+        private const val RATE_PROMPT_SNOOZE_MS = 7L * 24 * 60 * 60 * 1000
+    }
 
     val playbackState: StateFlow<PlaybackState> = playerEngine.playbackState
 
@@ -135,25 +153,104 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _settings = MutableStateFlow(preferenceManager.loadSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
 
+    /** First-run tour: shown once, right after the very first launch. */
+    private val _showOnboarding = MutableStateFlow(!preferenceManager.hasSeenOnboarding())
+    val showOnboarding: StateFlow<Boolean> = _showOnboarding.asStateFlow()
+
+    /** "Rate us" card: only after the app has proven itself (>= RATE_PROMPT_MIN_PLAYS plays). */
+    private val _showRatePrompt = MutableStateFlow(false)
+    val showRatePrompt: StateFlow<Boolean> = _showRatePrompt.asStateFlow()
+
     private val _toastEvent = MutableSharedFlow<String>(extraBufferCapacity = 5)
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
+
+    private var widgetSignature: String = ""
+
+    /** Context whose resources follow the in-app language selection. */
+    private val localizedContext: Context
+        get() {
+            val mode = _settings.value.languageMode
+            val deviceLanguage = AppLanguage.deviceLanguage(context)
+            return if (AppLanguage.isPersianLanguageCode(deviceLanguage) == AppLanguage.isPersian(mode, deviceLanguage)) {
+                context
+            } else {
+                LocaleAwareContext(context, AppLanguage.localeFor(mode, deviceLanguage))
+            }
+        }
 
     init {
         playerEngine.onTrackCompletedCallback = {
             playNextTrack()
         }
+        playerEngine.onSkipNextRequested = {
+            playNextTrack()
+        }
+        playerEngine.onSkipPreviousRequested = {
+            playPreviousTrack()
+        }
+        playerEngine.onToggleFavoriteRequested = {
+            playbackState.value.currentTrack?.let { toggleFavorite(it) }
+        }
         playerEngine.onStopAfterTrackTriggeredCallback = {
-            showToast("پخش آهنگ به پایان رسید (توقف خودکار فعال بود)")
+            showToast(R.string.toast_stop_after_triggered)
         }
 
+        // Notification / lock screen media controls (title, artist, buttons and the timeline).
+        // The manager refreshes the MediaSession on every tick but only re-posts the notification
+        // when the visible content changes, so this is cheap even though it runs often.
         viewModelScope.launch {
-            combine(playbackState, _settings) { state, setts ->
-                mediaNotificationManager.updateNotification(
-                    track = state.currentTrack,
-                    isPlaying = state.isPlaying,
-                    isEnabled = setts.lockScreenControlsEnabled
-                )
-            }.collect()
+            combine(playbackState, _settings) { state, setts -> state to setts }
+                .collect { (state, setts) ->
+                    mediaNotificationManager.updatePlayback(
+                        track = state.currentTrack,
+                        isPlaying = state.isPlaying,
+                        isEnabled = setts.lockScreenControlsEnabled,
+                        positionMs = state.currentPositionMs,
+                        durationMs = state.durationMs,
+                        stringContext = localizedContext
+                    )
+                }
+        }
+
+        // Home screen widget state (progress is refreshed in 2 second steps while playing).
+        viewModelScope.launch {
+            combine(playbackState, _settings) { state, setts -> state to setts }
+                .collect { (state, setts) ->
+                    val positionBucket = if (state.isPlaying) {
+                        state.currentPositionMs / WIDGET_PROGRESS_STEP_MS
+                    } else {
+                        state.currentPositionMs
+                    }
+                    val signature = listOf(
+                        state.currentTrack?.id ?: "",
+                        state.currentTrack?.isFavorite ?: false,
+                        state.isPlaying,
+                        positionBucket,
+                        state.durationMs,
+                        state.isShuffleEnabled,
+                        state.repeatMode.ordinal,
+                        state.currentQueue.size,
+                        setts.languageMode,
+                        setts.accentTheme
+                    ).joinToString("|")
+
+                    if (signature != widgetSignature) {
+                        widgetSignature = signature
+                        WidgetStateStore.save(
+                            context = context,
+                            track = state.currentTrack,
+                            isPlaying = state.isPlaying,
+                            positionMs = state.currentPositionMs,
+                            durationMs = state.durationMs,
+                            languageMode = setts.languageMode,
+                            accentTheme = setts.accentTheme,
+                            isShuffleEnabled = state.isShuffleEnabled,
+                            repeatMode = state.repeatMode.ordinal,
+                            queueSize = state.currentQueue.size
+                        )
+                        NovoWidgetProvider.refreshAll(context)
+                    }
+                }
         }
 
         // Persist settings whenever changed
@@ -162,6 +259,55 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 preferenceManager.saveSettings(setts)
             }
         }
+
+        // Decide when to ask for a store rating (see RATE_PROMPT_MIN_PLAYS).
+        viewModelScope.launch {
+            // collect the repository flow directly so the UI-facing allTracks cache stays lazy
+            repository.allTracks.collect { tracks ->
+                maybeShowRatePrompt(tracks.sumOf { it.playCount })
+            }
+        }
+    }
+
+    /**
+     * The store rating is the strongest organic discovery signal we control, but asking too early
+     * (or after a "later") hurts. Ask once the user has really used the player, once per snooze
+     * period, and never again after a decision.
+     */
+    private fun maybeShowRatePrompt(totalPlays: Int) {
+        if (_showOnboarding.value || _showRatePrompt.value) return
+        if (totalPlays < RATE_PROMPT_MIN_PLAYS) return
+        when (preferenceManager.ratePromptState()) {
+            PreferenceManager.RATE_NEW -> _showRatePrompt.value = true
+            PreferenceManager.RATE_SNOOZED ->
+                if (System.currentTimeMillis() >= preferenceManager.ratePromptSnoozeUntil()) {
+                    _showRatePrompt.value = true
+                }
+            else -> Unit // rated / never
+        }
+    }
+
+    fun completeOnboarding() {
+        _showOnboarding.value = false
+        preferenceManager.setOnboardingSeen(true)
+    }
+
+    fun onRatePromptRated() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(PreferenceManager.RATE_RATED)
+    }
+
+    fun onRatePromptSnoozed() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(
+            PreferenceManager.RATE_SNOOZED,
+            System.currentTimeMillis() + RATE_PROMPT_SNOOZE_MS
+        )
+    }
+
+    fun onRatePromptDismissedForever() {
+        _showRatePrompt.value = false
+        preferenceManager.setRatePromptState(PreferenceManager.RATE_NEVER)
     }
 
     fun navigateTo(screen: ScreenDestination) {
@@ -281,8 +427,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 playerEngine.updateCurrentTrackFavorite(newFav)
             }
 
-            val msg = if (newFav) "به علاقه‌مندی‌ها اضافه شد ❤️" else "از علاقه‌مندی‌ها حذف شد"
-            showToast(msg)
+            showToast(if (newFav) R.string.toast_added_favorite else R.string.toast_removed_favorite)
         }
     }
 
@@ -290,7 +435,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (name.isBlank()) return
         viewModelScope.launch {
             repository.createPlaylist(name.trim(), description.trim())
-            showToast("لیست «$name» ایجاد شد")
+            showToast(R.string.toast_playlist_created, name)
         }
     }
 
@@ -299,21 +444,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val pId = repository.createPlaylist(name.trim(), "")
             repository.addTrackToPlaylist(pId, trackId)
-            showToast("لیست «$name» ایجاد و آهنگ به آن اضافه شد")
+            showToast(R.string.toast_playlist_created_with_track, name)
         }
     }
 
     fun addTrackToPlaylist(playlistId: String, trackId: String) {
         viewModelScope.launch {
             repository.addTrackToPlaylist(playlistId, trackId)
-            showToast("به لیست پخش اضافه شد")
+            showToast(R.string.toast_added_to_playlist)
         }
     }
 
     fun removeTrackFromPlaylist(playlistId: String, trackId: String) {
         viewModelScope.launch {
             repository.removeTrackFromPlaylist(playlistId, trackId)
-            showToast("از لیست پخش حذف شد")
+            showToast(R.string.toast_removed_from_playlist)
         }
     }
 
@@ -323,7 +468,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             if (_selectedPlaylist.value?.id == playlist.id) {
                 _selectedPlaylist.value = null
             }
-            showToast("لیست «${playlist.name}» حذف شد")
+            showToast(R.string.toast_playlist_deleted, playlist.name)
         }
     }
 
@@ -347,7 +492,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
             playerEngine.setBassBoost(preset.bassBoostLevel.toShort())
             playerEngine.setVirtualizer(preset.virtualizerLevel.toShort())
-            showToast("پریست «${preset.name}» فعال شد")
+            showToast(R.string.toast_preset_applied, equalizerPresetTitle(context, preset))
         } catch (e: Exception) {
             android.util.Log.e("MusicViewModel", "Failed to apply preset: ${e.message}")
         }
@@ -367,25 +512,28 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 virtualizerLevel = virtualizer
             )
             repository.saveEqualizerPreset(entity)
-            showToast("پریست اکولایزر «$name» ذخیره شد")
+            showToast(R.string.toast_preset_saved, name)
         }
     }
 
     fun startSleepTimer(minutes: Int) {
         playerEngine.startSleepTimer(minutes)
         _settings.update { it.copy(sleepTimerMinutes = minutes) }
-        val msg = if (minutes > 0) "تایمر خواب روی $minutes دقیقه تنظیم شد" else "تایمر خواب غیرفعال شد"
-        showToast(msg)
+        if (minutes > 0) {
+            showToast(R.string.toast_sleep_timer_set, minutes)
+        } else {
+            showToast(R.string.toast_sleep_timer_off)
+        }
     }
 
     fun cancelSleepTimer() {
         playerEngine.cancelSleepTimer()
         _settings.update { it.copy(sleepTimerMinutes = 0) }
-        showToast("تایمر خواب لغو شد")
+        showToast(R.string.toast_sleep_timer_cancelled)
     }
 
-    fun togglePersian() {
-        _settings.update { it.copy(isPersian = !it.isPersian) }
+    fun setLanguage(mode: String) {
+        _settings.update { it.copy(languageMode = mode) }
     }
 
     fun toggleAmoled() {
@@ -405,20 +553,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val currentIndex = styles.indexOf(_settings.value.nowPlayingStyle)
         val nextStyle = styles[(currentIndex + 1) % styles.size]
         _settings.update { it.copy(nowPlayingStyle = nextStyle) }
-        val nameFa = when (nextStyle) {
-            "neon_vinyl" -> "چرخش نئونی وینیل"
-            "spectrum_wave" -> "اکولایزر طیف نئونی"
-            "glass_3d" -> "کاور سه‌بعدی شیشه‌ای"
-            else -> "امواج تپنده ریتمیک"
+        val styleRes = when (nextStyle) {
+            "neon_vinyl" -> R.string.style_neon_vinyl
+            "spectrum_wave" -> R.string.style_spectrum_wave
+            "glass_3d" -> R.string.style_glass_3d
+            else -> R.string.style_pulse_rings
         }
-        showToast("جلوه بصری: $nameFa")
+        showToast(R.string.toast_visual_style_changed, localizedContext.getString(styleRes))
     }
 
     fun setMinDurationSeconds(seconds: Int) {
         _settings.update { it.copy(minDurationSeconds = seconds) }
         viewModelScope.launch {
             repository.deleteRingtonesAndShortTracks(seconds * 1000L)
-            showToast("فیلتر حداقل زمان روی $seconds ثانیه تنظیم شد")
+            showToast(R.string.toast_min_duration_set, seconds)
         }
     }
 
@@ -453,7 +601,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 preferenceManager.setInitialScanCompleted(true)
                 _isScanning.value = false
                 if (count > 0) {
-                    showToast("$count آهنگ در حافظه دستگاه یافت شد")
+                    showToastPlural(R.plurals.toast_tracks_found, count)
                 }
             } else {
                 // Quick silent background incremental check: detects newly downloaded/added audio files
@@ -470,7 +618,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val count = repository.scanDeviceAudio(_settings.value.minDurationSeconds * 1000L)
             preferenceManager.setInitialScanCompleted(true)
             _isScanning.value = false
-            showToast("$count آهنگ در حافظه دستگاه بررسی و همگام شد")
+            showToastPlural(R.plurals.toast_library_synced, count)
         }
     }
 
@@ -493,20 +641,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val track = TrackEntity(
                     id = "import_${UUID.randomUUID().toString().take(8)}",
                     title = title,
-                    artist = "فایل وارد شده",
-                    album = "دانلودها / وارد شده",
+                    artist = localizedContext.getString(R.string.imported_artist),
+                    album = localizedContext.getString(R.string.imported_album),
                     durationMs = 0L,
                     uriString = destFile.absolutePath,
-                    folderPath = "وارد شده دستی",
+                    folderPath = localizedContext.getString(R.string.imported_folder),
                     isDownloaded = true,
                     downloadProgress = 100,
                     downloadedFilePath = destFile.absolutePath,
                     fileSizeBytes = destFile.length()
                 )
                 repository.insertTracks(listOf(track))
-                showToast("آهنگ «$title» به کتابخانه اضافه شد")
+                showToast(R.string.toast_track_imported, title)
             } catch (e: Exception) {
-                showToast("خطا در وارد کردن فایل: ${e.message}")
+                showToast(R.string.toast_import_failed, e.message ?: "")
             }
         }
     }
@@ -525,6 +673,24 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         } catch (_: Exception) {}
         return name ?: uri.lastPathSegment
+    }
+
+    private fun showToast(resId: Int, vararg args: Any) {
+        val message = try {
+            localizedContext.getString(resId, *args)
+        } catch (_: Exception) {
+            ""
+        }
+        showToast(message)
+    }
+
+    private fun showToastPlural(resId: Int, count: Int) {
+        val message = try {
+            localizedContext.resources.getQuantityString(resId, count, count)
+        } catch (_: Exception) {
+            ""
+        }
+        showToast(message)
     }
 
     private fun showToast(message: String) {

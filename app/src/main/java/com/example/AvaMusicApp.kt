@@ -6,6 +6,7 @@ import com.example.data.audio.AudioPlayerEngine
 import com.example.data.audio.AudioSynthGenerator
 import com.example.data.local.AppDatabase
 import com.example.data.repository.MusicRepository
+import com.example.widget.NovoWidgetProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,6 +46,11 @@ class AvaMusicApp : Application() {
                 repository.scanDeviceAudio()
             } catch (t: Throwable) {
                 Log.e("AvaMusicApp", "Failed to scan device audio: ${t.message}")
+            }
+            try {
+                NovoWidgetProvider.refreshAll(applicationContext)
+            } catch (t: Throwable) {
+                Log.e("AvaMusicApp", "Failed to refresh widget: ${t.message}")
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.example.data.audio
 
 import android.content.Context
+import com.example.R
 import com.example.data.local.TrackEntity
 import java.io.File
 import java.io.FileOutputStream
@@ -38,10 +39,10 @@ object AudioSynthGenerator {
         val tracks = listOf(
             DemoTrackSpec(
                 id = "demo_persian_shur",
-                title = "آوای اصفهان و شور",
-                artist = "استاد کمالی & گروه آوا",
-                album = "نغمه‌های کهن",
-                genre = "سنتی ایرانی",
+                title = context.getString(R.string.demo_persian_title),
+                artist = context.getString(R.string.demo_persian_artist),
+                album = context.getString(R.string.demo_persian_album),
+                genre = context.getString(R.string.demo_persian_genre),
                 mood = "Acoustic",
                 bpm = 84,
                 durationSeconds = 4,
@@ -52,7 +53,7 @@ object AudioSynthGenerator {
             ),
             DemoTrackSpec(
                 id = "demo_neon_drive",
-                title = "امواج نئونی (Neon Waves)",
+                title = context.getString(R.string.demo_neon_title),
                 artist = "CyberPulse",
                 album = "Retro Horizon 1984",
                 genre = "Synthwave",
@@ -66,7 +67,7 @@ object AudioSynthGenerator {
             ),
             DemoTrackSpec(
                 id = "demo_lofi_sunset",
-                title = "غروب فیروزه‌ای (Turquoise Chill)",
+                title = context.getString(R.string.demo_turquoise_title),
                 artist = "Nima Chillout",
                 album = "Midnight Cafeteria",
                 genre = "Lo-Fi Beats",
@@ -80,10 +81,10 @@ object AudioSynthGenerator {
             ),
             DemoTrackSpec(
                 id = "demo_desert_pulse",
-                title = "طپش کویر (Desert Pulse)",
-                artist = "کویربند",
-                album = "سکوت بیابان",
-                genre = "سنتی فیوژن",
+                title = context.getString(R.string.demo_desert_title),
+                artist = context.getString(R.string.demo_desert_artist),
+                album = context.getString(R.string.demo_desert_album),
+                genre = context.getString(R.string.demo_desert_genre),
                 mood = "Energetic",
                 bpm = 110,
                 durationSeconds = 4,
@@ -137,7 +138,7 @@ object AudioSynthGenerator {
                     playCount = spec.initialPlayCount,
                     isFavorite = spec.initialPlayCount > 20,
                     lastPlayedTimestamp = if (spec.initialPlayCount > 0) System.currentTimeMillis() - 86400000L else 0L,
-                    folderPath = "دمو اختصاصی آوا",
+                    folderPath = context.getString(R.string.demo_folder),
                     isDownloaded = isDownloaded,
                     downloadProgress = if (isDownloaded) 100 else 0,
                     downloadedFilePath = downloadedPath,

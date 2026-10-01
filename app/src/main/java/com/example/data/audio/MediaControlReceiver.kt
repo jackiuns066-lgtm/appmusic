@@ -15,11 +15,36 @@ class MediaControlReceiver : BroadcastReceiver() {
             MediaNotificationManager.ACTION_PLAY_PAUSE -> {
                 playerEngine.togglePlayPause()
             }
+            MediaNotificationManager.ACTION_PLAY -> {
+                playerEngine.resume()
+            }
+            MediaNotificationManager.ACTION_PAUSE -> {
+                playerEngine.pause()
+            }
+            MediaNotificationManager.ACTION_SEEK -> {
+                val position = intent.getLongExtra(MediaNotificationManager.EXTRA_SEEK_POSITION, 0L)
+                playerEngine.seekTo(position.coerceAtLeast(0L))
+            }
+            MediaNotificationManager.ACTION_TOGGLE_SHUFFLE -> {
+                playerEngine.toggleShuffle()
+            }
+            MediaNotificationManager.ACTION_TOGGLE_REPEAT -> {
+                playerEngine.toggleRepeatMode()
+            }
+            MediaNotificationManager.ACTION_TOGGLE_FAVORITE -> {
+                playerEngine.onToggleFavoriteRequested?.invoke()
+            }
             MediaNotificationManager.ACTION_NEXT -> {
-                playerEngine.onTrackCompletedCallback?.invoke()
+                val skipNext = playerEngine.onSkipNextRequested ?: playerEngine.onTrackCompletedCallback
+                skipNext?.invoke()
             }
             MediaNotificationManager.ACTION_PREVIOUS -> {
-                playerEngine.seekTo(0L)
+                val skipPrevious = playerEngine.onSkipPreviousRequested
+                if (skipPrevious != null) {
+                    skipPrevious.invoke()
+                } else {
+                    playerEngine.seekTo(0L)
+                }
             }
         }
     }

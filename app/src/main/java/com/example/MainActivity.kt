@@ -1,6 +1,7 @@
 package com.example
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,11 +15,16 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.MainScreen
 import com.example.ui.MusicViewModel
+import com.example.ui.ScreenDestination
 import com.example.ui.theme.AvaMusicTheme
 
 class MainActivity : ComponentActivity() {
 
     private val musicViewModel: MusicViewModel by viewModels()
+
+    companion object {
+        const val EXTRA_OPEN_NOW_PLAYING = "extra_open_now_playing"
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -38,6 +44,7 @@ class MainActivity : ComponentActivity() {
         }
 
         checkAndRequestPermissions()
+        handleLaunchIntent(intent)
 
         setContent {
             val settings by musicViewModel.settings.collectAsStateWithLifecycle()
@@ -47,6 +54,19 @@ class MainActivity : ComponentActivity() {
             ) {
                 MainScreen(viewModel = musicViewModel)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLaunchIntent(intent)
+    }
+
+    /** The home screen widget can ask the app to jump straight to the now playing screen. */
+    private fun handleLaunchIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_NOW_PLAYING, false) == true) {
+            musicViewModel.navigateTo(ScreenDestination.NOW_PLAYING)
         }
     }
 

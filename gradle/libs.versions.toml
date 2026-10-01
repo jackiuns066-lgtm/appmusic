@@ -28,6 +28,7 @@ okhttp = "4.10.0"
 moshiKotlin = "1.15.2"
 robolectric = "4.16.1"
 secretsGradlePlugin = "2.0.1"
+androidxMedia = "1.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,6 +65,7 @@ logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-intercep
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshiKotlin" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-media = { group = "androidx.media", name = "media", version.ref = "androidxMedia" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

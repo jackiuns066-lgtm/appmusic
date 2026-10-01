@@ -46,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.audio.PlaybackState
 import com.example.data.local.PlaylistEntity
 import com.example.data.local.TrackEntity
@@ -89,7 +91,7 @@ fun PlaylistsScreen(
                 IconButton(onClick = { onSelectPlaylist(null) }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "بازگشت"
+                        contentDescription = stringResource(R.string.cd_back)
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
@@ -113,7 +115,7 @@ fun PlaylistsScreen(
                 IconButton(onClick = { playlistToDelete = selectedPlaylist }) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "حذف لیست پخش",
+                        contentDescription = stringResource(R.string.cd_delete_playlist),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -128,7 +130,7 @@ fun PlaylistsScreen(
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("پخش همه آهنگ‌ها (${playlistTracks.size} آهنگ)")
+                    Text(stringResource(R.string.playlists_play_all, playlistTracks.size))
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -142,7 +144,7 @@ fun PlaylistsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "این لیست هنوز آهنگی ندارد.\nمی‌توانید از تب «آهنگ‌ها» با زدن دکمه ＋ آهنگ‌ها را به این لیست اضافه کنید.",
+                        text = stringResource(R.string.playlists_empty_detail),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -174,7 +176,7 @@ fun PlaylistsScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "حذف از لیست",
+                                    contentDescription = stringResource(R.string.cd_remove_from_playlist),
                                     tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f)
                                 )
                             }
@@ -193,7 +195,7 @@ fun PlaylistsScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.testTag("create_playlist_fab")
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "ایجاد لیست جدید")
+                    Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_create_playlist))
                 }
             }
         ) { padding ->
@@ -205,12 +207,12 @@ fun PlaylistsScreen(
                     .testTag("playlists_screen")
             ) {
                 Text(
-                    text = "لیست‌های پخش شما",
+                    text = stringResource(R.string.playlists_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "آهنگ‌های دلخواه خود را در پلی‌لیست‌های اختصاصی دسته‌بندی کنید",
+                    text = stringResource(R.string.playlists_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -233,7 +235,7 @@ fun PlaylistsScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "هنوز هیچ لیست پخشی ایجاد نشده است",
+                                text = stringResource(R.string.playlists_empty),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -241,7 +243,7 @@ fun PlaylistsScreen(
                             Button(onClick = { showCreateDialog = true }) {
                                 Icon(imageVector = Icons.Default.Add, contentDescription = null)
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text("ایجاد اولین لیست پخش")
+                                Text(stringResource(R.string.playlists_create_first))
                             }
                         }
                     }
@@ -303,7 +305,7 @@ fun PlaylistsScreen(
                                     IconButton(onClick = { playlistToDelete = playlist }) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "حذف لیست",
+                                            contentDescription = stringResource(R.string.cd_delete_playlist),
                                             tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
                                         )
                                     }
@@ -332,8 +334,8 @@ fun PlaylistsScreen(
         val p = playlistToDelete!!
         AlertDialog(
             onDismissRequest = { playlistToDelete = null },
-            title = { Text("حذف لیست پخش") },
-            text = { Text("آیا از حذف لیست پخش «${p.name}» مطمئن هستید؟ آهنگ‌های دستگاه حذف نخواهند شد.") },
+            title = { Text(stringResource(R.string.dialog_delete_playlist_title)) },
+            text = { Text(stringResource(R.string.dialog_delete_playlist_message, p.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -341,12 +343,12 @@ fun PlaylistsScreen(
                         playlistToDelete = null
                     }
                 ) {
-                    Text("بله، حذف کن")
+                    Text(stringResource(R.string.action_yes_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { playlistToDelete = null }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -381,13 +383,13 @@ fun CreatePlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("ایجاد لیست پخش جدید") },
+        title = { Text(stringResource(R.string.dialog_new_playlist_title)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("نام لیست پخش") },
+                    label = { Text(stringResource(R.string.label_playlist_name)) },
                     singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -397,7 +399,7 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("توضیحات (اختیاری)") },
+                    label = { Text(stringResource(R.string.label_playlist_description)) },
                     singleLine = false,
                     maxLines = 2,
                     modifier = Modifier.fillMaxWidth()
@@ -410,12 +412,12 @@ fun CreatePlaylistDialog(
                 enabled = name.isNotBlank(),
                 modifier = Modifier.testTag("confirm_create_playlist_btn")
             ) {
-                Text("ایجاد لیست")
+                Text(stringResource(R.string.action_create_playlist))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("انصراف")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
