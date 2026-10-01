@@ -308,12 +308,17 @@ jobs:
           AAB=app/build/outputs/bundle/standardRelease/app-standard-release.aab
           if [ -f "$AAB" ]; then
             # نسخه‌های قدیمی AAB را پاک می‌کنیم تا صفحهٔ انتشار بی‌دلیل حجیم نشود
-            for old in $(gh release view apk-latest --repo "$REPO" --json assets --jq '.assets[].name' | grep -E '^Novo-[0-9]+\.aab$' || true); do
+            for old in $(gh release view apk-latest --repo "$REPO" --json assets --jq '.assets[].name' | grep -E '^Novo-?[0-9]*\.aab$' | grep -v '^Novo-latest\.aab$' || true); do
               gh release delete-asset apk-latest "$old" --repo "$REPO" --yes >/dev/null 2>&1 || true
             done
+            # نسخهٔ شماره‌دار (برای آرشیو) و نسخهٔ با نام ثابت (لینکی که همیشه کار می‌کند و
+            # می‌شود آن را در پیشخان فروشگاه بوکمارک کرد)
             cp "$AAB" "/tmp/Novo-$VERSION_CODE.aab"
+            cp "$AAB" "/tmp/Novo-latest.aab"
             gh release upload apk-latest "/tmp/Novo-$VERSION_CODE.aab" --repo "$REPO" --clobber
-            echo "bundle       : https://github.com/$REPO/releases/download/apk-latest/Novo-$VERSION_CODE.aab"
+            gh release upload apk-latest "/tmp/Novo-latest.aab" --repo "$REPO" --clobber
+            echo "bundle (archive): https://github.com/$REPO/releases/download/apk-latest/Novo-$VERSION_CODE.aab"
+            echo "bundle (stable) : https://github.com/$REPO/releases/download/apk-latest/Novo-latest.aab"
           fi
 
           echo "main channel : https://github.com/$REPO/releases/download/apk-latest/Novo-release.apk"

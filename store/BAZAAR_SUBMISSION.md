@@ -27,7 +27,7 @@
 | ۶ اسکرین‌شات ۱۰۸۰×۱۹۲۰ فارسی | `store/screenshots/01…06` |
 | عنوان، توضیح کوتاه، توضیح کامل (فارسی و انگلیسی) | `play_store_listing.json` + بخش ۳ همین فایل |
 | سیاست حریم خصوصی (فارسی + انگلیسی) | `store/PRIVACY_POLICY.md` |
-| فایل بستهٔ نصب (AAB و APK) | هر بیلد: `…/releases/download/apk-latest/Novo-<کدنسخه>.aab` و `Novo-release.apk` |
+| فایل بستهٔ نصب (AAB و APK) | `…/releases/download/apk-latest/Novo-latest.aab` (نام ثابت) و `Novo-release.apk` |
 | شناسهٔ اختصاصی برند | `ir.webnovo.novo` (بدون احتمال تداخل با اپ دیگر) |
 | امضا با یک کلید ثابت (v1+v2+v3) | شرط پذیرش بستهٔ آپدیت در بازار |
 | `versionCode` صعودی خودکار | `10100 + شمارهٔ اجرای GitHub Actions` |
